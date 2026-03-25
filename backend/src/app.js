@@ -40,5 +40,7 @@ app.use("/api/payments", paymentRoutes);
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
-
+app.get("/", (req, res) => {
+  res.send("NutriFlow API radi 🚀");
+});
 export default app;
