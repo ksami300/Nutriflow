@@ -8,7 +8,7 @@ import authRoutes from "./routes/authRoutes.js";
 import mealPlanRoutes from "./routes/mealPlanRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
-
+import errorHandler from "./middlewares/errorMiddleware.js";
 
 const app = express();
 
@@ -38,9 +38,10 @@ app.use("/api/payments", paymentRoutes);
 
 // ❤️ HEALTH CHECK
 app.get("/", (req, res) => {
-  res.send("API is running...");
+  res.json({ status: "ok", message: "NutriFlow API radi 🚀" });
 });
-app.get("/", (req, res) => {
-  res.send("NutriFlow API radi 🚀");
-});
+
+// GLOBAL ERROR HANDLER
+app.use(errorHandler);
+
 export default app;

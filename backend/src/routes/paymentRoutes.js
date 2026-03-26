@@ -4,7 +4,11 @@ import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-const stripe = new Stripe("sk_test_TVOJ_KLJUC");
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error("STRIPE_SECRET_KEY is required");
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // CREATE CHECKOUT SESSION
 router.post("/create-checkout-session", protect, async (req, res) => {

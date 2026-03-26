@@ -1,7 +1,11 @@
 import OpenAI from "openai";
 
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error("OPENAI_API_KEY is required");
+}
+
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "OVDE_PRIVREMENO_STAVI_KLJUC"
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 export const aiCoach = async (req, res) => {
