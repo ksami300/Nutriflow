@@ -57,22 +57,32 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-   const handleBuy = async () => {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/create-checkout-session`, {
-    method: "POST",
-  });
 
-  const data = await res.json();
-  window.location.href = data.url;
-};
+  // ✅ FIX: funkcija VAN JSX
+  const handleBuy = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/payments/create-checkout-session`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!res.ok) throw new Error("Payment error");
+
+      const data = await res.json();
+      window.location.href = data.url;
+    } catch (err) {
+      toast.error("Greška pri plaćanju");
+    }
+  };
+
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Dashboard</h1>
 
-        {/* 🔴 OVO JE LOGOUT DUGME */}
         <button
           onClick={logout}
           className="bg-red-500 text-white px-3 py-1 rounded"
@@ -95,9 +105,18 @@ export default function Dashboard() {
       {/* GENERATE BUTTON */}
       <button
         onClick={handleGenerate}
+        disabled={loading}
         className="bg-green-500 text-white px-4 py-2 mt-4 rounded"
       >
         Generiši plan
+      </button>
+
+      {/* 💰 PREMIUM BUTTON */}
+      <button
+        onClick={handleBuy}
+        className="bg-purple-600 text-white px-4 py-2 mt-4 ml-2 rounded"
+      >
+        Buy Premium
       </button>
 
       {/* LOADING */}
