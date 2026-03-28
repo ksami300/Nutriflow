@@ -1,16 +1,28 @@
-import { fetcher } from "./fetcher";
+const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
-export const getMealPlans = (token: string) => {
-  return fetcher("/meal-plans", {}, token);
+export const getMealPlans = async (token: string) => {
+  const res = await fetch(`${API_URL}/api/meal-plans`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch meal plans");
+
+  return res.json();
 };
 
-export const createMealPlan = (goal: string, token: string) => {
-  return fetcher(
-    "/meal-plans",
-    {
-      method: "POST",
-      body: JSON.stringify({ goal }),
+export const createMealPlan = async (goal: string, token: string) => {
+  const res = await fetch(`${API_URL}/api/meal-plans`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
-    token
-  );
+    body: JSON.stringify({ goal }),
+  });
+
+  if (!res.ok) throw new Error("Failed to create meal plan");
+
+  return res.json();
 };
