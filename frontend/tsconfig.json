@@ -14,12 +14,14 @@
     "jsx": "react-jsx",
     "incremental": true,
 
-    "baseUrl": ".",  // 🔥 OVO JE KLJUČNO
+    "baseUrl": ".",
+   "paths": {
+  "@/*": ["./src/*"]
+   },  // 🔥 OVO JE KLJUČNO
 
     "paths": {
-      "@/*": ["./*"]
-    },
-
+  "@/*": ["./src/*"]
+  },
     "plugins": [
       {
         "name": "next"
