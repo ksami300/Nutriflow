@@ -57,7 +57,14 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+   const handleBuy = async () => {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/create-checkout-session`, {
+    method: "POST",
+  });
 
+  const data = await res.json();
+  window.location.href = data.url;
+};
   return (
     <div className="p-6 max-w-3xl mx-auto">
       
