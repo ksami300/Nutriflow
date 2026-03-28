@@ -45,18 +45,28 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-const handleBuy = async () => {
-  const res = await fetch("http://localhost:5000/api/payments/create-checkout-session", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
 
-  const data = await res.json();
+  // ✅ SAMO JEDAN handleBuy i VAN JSX
+  const handleBuy = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/payments/create-checkout-session`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-  window.location.href = data.url;
-};
+      if (!res.ok) throw new Error();
+
+      const data = await res.json();
+      window.location.href = data.url;
+    } catch {
+      toast.error("Greška pri plaćanju");
+    }
+  };
 
   const handleGenerate = async () => {
     try {
@@ -97,34 +107,25 @@ const handleBuy = async () => {
         <option value="maintain">Održavanje</option>
       </select>
 
-      {/* BUTTON */}
+      {/* GENERATE */}
       <button
         onClick={handleGenerate}
         className="bg-green-500 text-white px-4 py-2 mt-4 rounded"
       >
         Generiši plan
       </button>
-    {/* 💎 PREMIUM BUTTON */}
-<button
-  onClick={handleBuy}
-  className="bg-purple-600 text-white px-4 py-2 mt-4 rounded"
->
-  Upgrade na Premium 💎
-</button>
+
+      {/* 💎 PREMIUM */}
+      <button
+        onClick={handleBuy}
+        className="bg-purple-600 text-white px-4 py-2 mt-4 rounded"
+      >
+        Upgrade na Premium 💎
+      </button>
+
       {/* LOADING */}
       {loading && <p className="mt-4">Loading...</p>}
-     const handleBuy = async () => {
-  const res = await fetch("http://localhost:5000/api/payments/create-checkout-session", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
 
-  const data = await res.json();
-
-  window.location.href = data.url;
-};
       {/* PLANS */}
       <div className="mt-6 space-y-4">
         {plans.map((plan) => (
