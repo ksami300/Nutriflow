@@ -1,11 +1,15 @@
-const API_URL = "http://localhost:5000/api";
+const API_ROOT = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_ROOT) {
+  throw new Error("NEXT_PUBLIC_API_URL must be defined");
+}
 
 export const fetcher = async (
   endpoint: string,
   options: RequestInit = {},
   token?: string
 ) => {
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  const res = await fetch(`${API_ROOT}${endpoint}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",

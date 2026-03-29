@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { getToken } from "@/utils/auth";
 
 export default function AICoach() {
@@ -10,7 +11,14 @@ export default function AICoach() {
   const token = getToken();
 
   const sendMessage = async () => {
-    const res = await fetch("http://localhost:5000/api/ai", {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    if (!apiUrl) {
+      toast.error("NEXT_PUBLIC_API_URL nije postavljen");
+      return;
+    }
+
+    const res = await fetch(`${apiUrl}/api/ai`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -18,6 +26,11 @@ export default function AICoach() {
       },
       body: JSON.stringify({ message: msg }),
     });
+
+    if (!res.ok) {
+      toast.error("Greška pri AI pozivu");
+      return;
+    }
 
     const data = await res.json();
     setReply(data.reply);

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { getToken } from "@/utils/auth";
 
-export default function AuthGuard({ children }: any) {
+export default function AuthGuard({ children }: { children: ReactNode }) {
   useEffect(() => {
     const token = getToken();
 
