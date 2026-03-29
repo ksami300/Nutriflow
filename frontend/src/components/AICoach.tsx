@@ -9,16 +9,30 @@ export default function AICoach() {
   const [reply, setReply] = useState("");
 
   const token = getToken();
+  const [sending, setSending] = useState(false);
 
   const sendMessage = async () => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    if (!token) {
+      toast.error("Token nije pronađen. Prijavi se ponovo.");
+      window.location.href = "/login";
+      return;
+    }
+
+    if (!msg?.trim()) {
+      toast.error("Unesi poruku pre slanja.");
+      return;
+    }
 
     if (!apiUrl) {
       toast.error("NEXT_PUBLIC_API_URL nije postavljen");
       return;
     }
 
-    const res = await fetch(`${apiUrl}/api/ai`, {
+    setSending(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/ai`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -34,6 +48,11 @@ export default function AICoach() {
 
     const data = await res.json();
     setReply(data.reply);
+  } catch (error) {
+    toast.error("Greška pri AI pozivu");
+  } finally {
+    setSending(false);
+  }
   };
 
   return (
@@ -43,12 +62,14 @@ export default function AICoach() {
       <input
         className="border p-2 w-full mt-2"
         placeholder="Pitaj trenera..."
+        value={msg}
         onChange={(e) => setMsg(e.target.value)}
       />
 
       <button
         onClick={sendMessage}
-        className="bg-blue-500 text-white px-4 py-2 mt-2"
+        disabled={sending}
+        className="bg-blue-500 text-white px-4 py-2 mt-2 disabled:opacity-50"
       >
         Pitaj
       </button>
