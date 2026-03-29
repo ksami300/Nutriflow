@@ -4,6 +4,9 @@ import bcrypt from "bcryptjs";
 
 // GENERATE TOKEN
 const generateToken = (id) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is required to generate tokens");
+  }
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "7d"
   });
@@ -44,7 +47,7 @@ export const registerUser = async (req, res) => {
       }
     });
 
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -81,7 +84,7 @@ export const loginUser = async (req, res) => {
       }
     });
 
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Server error" });
   }
 };

@@ -1,5 +1,4 @@
 import MealPlan from "../models/MealPlan.js";
-import User from "../models/User.js";
 
 // 📌 CREATE PLAN
 export const createMealPlan = async (req, res) => {

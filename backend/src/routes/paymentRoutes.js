@@ -4,16 +4,21 @@ import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("STRIPE_SECRET_KEY is required");
-}
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const getStripeClient = () => {
+  if (!stripe) {
+    throw new Error("STRIPE_SECRET_KEY is required");
+  }
+  return stripe;
+}
 
 // CREATE CHECKOUT SESSION
 router.post("/create-checkout-session", protect, async (req, res) => {
   try {
-    const session = await stripe.checkout.sessions.create({
+    const stripeClient = getStripeClient();
+    const session = await stripeClient.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "subscription",
       line_items: [

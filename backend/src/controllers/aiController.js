@@ -1,14 +1,12 @@
 import OpenAI from "openai";
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error("OPENAI_API_KEY is required");
-}
-
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+const openAiApiKey = process.env.OPENAI_API_KEY;
+const client = openAiApiKey ? new OpenAI({ apiKey: openAiApiKey }) : null;
 
 export const aiCoach = async (req, res) => {
+  if (!client) {
+    return res.status(500).json({ message: "OpenAI API key is not configured" });
+  }
   try {
     const { message } = req.body;
 

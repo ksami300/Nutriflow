@@ -48,7 +48,7 @@ export default function AICoach() {
 
     const data = await res.json();
     setReply(data.reply);
-  } catch (error) {
+  } catch {
     toast.error("Greška pri AI pozivu");
   } finally {
     setSending(false);

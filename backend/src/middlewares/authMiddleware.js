@@ -21,10 +21,12 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
-  } catch (error) {
+  } catch {
     return res.status(401).json({ message: "Token invalid" });
   }
 };
-if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET missing");
+
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  console.warn("WARNING: JWT_SECRET is not configured. Auth routes will fail until it is set.");
 }
