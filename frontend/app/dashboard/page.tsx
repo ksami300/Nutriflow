@@ -1,11 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { getMealPlans, createMealPlan } from "@/services/api";
-import { getToken, logout } from "@/utils/auth";
+import { useState } from "react";
 import toast from "react-hot-toast";
-import AICoach from "@/components/AICoach";
-import AuthGuard from "@/components/AuthGuard";
 
 type Meal = {
   name: string;
@@ -13,134 +9,78 @@ type Meal = {
 };
 
 type Plan = {
-  _id: string;
   goal: string;
   calories: number;
   meals: Meal[];
 };
 
 export default function DashboardPage() {
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plan, setPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(false);
-  const [goal, setGoal] = useState("lose");
+  const [goal, setGoal] = useState("gain");
 
-  const token = getToken();
+  const generatePlan = () => {
+    setLoading(true);
 
-  const loadPlans = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getMealPlans(token!);
-      setPlans(data);
-    } catch {
-      toast.error("Greška pri učitavanju planova");
-    } finally {
+    setTimeout(() => {
+      const generatedPlan: Plan = {
+        goal,
+        calories: 4800,
+        meals: [
+          { name: "Ovsene + whey + banana", calories: 900 },
+          { name: "Piletina + pirinač + maslinovo ulje", calories: 1200 },
+          { name: "Junetina + krompir", calories: 1300 },
+          { name: "Jaja + hleb + sir", calories: 900 },
+          { name: "Proteinski šejk + orašasti", calories: 500 }
+        ]
+      };
+
+      setPlan(generatedPlan);
       setLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
-    loadPlans();
-  }, [token, loadPlans]);
-
-  const handleGenerate = async () => {
-    try {
-      setLoading(true);
-      await createMealPlan(goal, token!);
-      toast.success("Plan kreiran 🔥");
-      await loadPlans();
-    } catch {
-      toast.error("Greška pri kreiranju plana");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBuy = async () => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/payments/create-checkout-session`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!res.ok) throw new Error("Payment error");
-
-      const data = await res.json();
-      window.location.href = data.url;
-    } catch {
-      toast.error("Greška pri plaćanju");
-    }
+      toast.success("AI plan generisan 🔥");
+    }, 1200);
   };
 
   return (
-    <AuthGuard>
-      <div className="p-6 max-w-3xl mx-auto">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <button
-            onClick={logout}
-            className="bg-red-500 text-white px-3 py-1 rounded"
-          >
-            Logout
-          </button>
-        </div>
+    <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-zinc-900 p-6 rounded-2xl shadow-xl">
+
+        <h1 className="text-3xl font-bold text-center mb-6">
+          NutriFlow AI 🔥
+        </h1>
 
         <select
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
-          className="border p-2 rounded mt-4"
+          className="w-full p-3 rounded bg-zinc-800 mb-4"
         >
-          <option value="lose">Mršavljenje</option>
-          <option value="gain">Masa</option>
-          <option value="maintain">Održavanje</option>
+          <option value="lose">Fat Loss</option>
+          <option value="gain">Muscle Gain</option>
+          <option value="maintain">Maintain</option>
         </select>
 
-        <div className="mt-4">
-          <button
-            onClick={handleGenerate}
-            disabled={loading}
-            className="bg-green-500 text-white px-4 py-2 rounded"
-          >
-            Generiši plan
-          </button>
+        <button
+          onClick={generatePlan}
+          disabled={loading}
+          className="w-full bg-green-500 py-3 rounded text-black font-bold"
+        >
+          {loading ? "Generating..." : "Generate AI Plan"}
+        </button>
 
-          <button
-            onClick={handleBuy}
-            className="bg-purple-600 text-white px-4 py-2 mt-2 ml-2 rounded"
-          >
-            Buy Premium
-          </button>
-        </div>
+        {plan && (
+          <div className="mt-6 space-y-3">
+            <p className="text-xl font-bold">
+              Calories: {plan.calories} kcal
+            </p>
 
-        {loading && <p className="mt-4">Loading...</p>}
-
-        <div className="mt-6 space-y-4">
-          {plans.map((plan) => (
-            <div key={plan._id} className="border p-4 rounded shadow">
-              <p className="font-bold">Goal: {plan.goal}</p>
-              <p>Calories: {plan.calories}</p>
-              <div className="mt-2">
-                {plan.meals.map((meal, i) => (
-                  <p key={i}>
-                    {meal.name} - {meal.calories} kcal
-                  </p>
-                ))}
+            {plan.meals.map((meal, i) => (
+              <div key={i} className="bg-zinc-800 p-3 rounded">
+                {meal.name} — {meal.calories} kcal
               </div>
-            </div>
-          ))}
-        </div>
-
-        <AICoach />
+            ))}
+          </div>
+        )}
       </div>
-    </AuthGuard>
+    </div>
   );
 }
