@@ -18,11 +18,12 @@ export const protect = async (req, res, next) => {
       req.user = user;
       next();
     } else {
-      return res.status(401).json({ message: "Not authorized" });
+      return res.status(401).json({ message: "Not authorized - no token" });
     }
 
-  } catch {
-    return res.status(401).json({ message: "Token invalid" });
+  } catch (error) {
+    console.error("Auth error:", error.message);
+    return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
 

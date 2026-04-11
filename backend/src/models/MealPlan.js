@@ -16,10 +16,27 @@ const mealPlanSchema = new mongoose.Schema(
       type: Number,
       required: true
     },
+    bmr: {
+      type: Number,
+      required: true
+    },
+    tdee: {
+      type: Number,
+      required: true
+    },
+    metrics: {
+      weight: { type: Number, required: true },
+      height: { type: Number, required: true },
+      age: { type: Number, required: true },
+      gender: { type: String, enum: ["male", "female"], required: true },
+      activityLevel: { type: String, required: true }
+    },
     meals: [
       {
         name: String,
-        calories: Number
+        calories: Number,
+        category: { type: String, enum: ["breakfast", "lunch", "snacks", "dinner"] },
+        targetCalories: Number
       }
     ]
   },

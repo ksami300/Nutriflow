@@ -13,7 +13,7 @@ router.post("/login", loginUser);
 // PROTECTED PROFILE
 router.get("/profile", protect, (req, res) => {
   res.json({
-    message: "Zaštićena ruta radi 🔐",
+    message: "Protected route working",
     user: req.user
   });
 });

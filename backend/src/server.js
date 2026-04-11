@@ -13,7 +13,7 @@ if (!process.env.MONGO_URI) {
 
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`Server radi na portu ${PORT}`);
+    console.log(`✅ Server running on port ${PORT}`);
   });
 }).catch((error) => {
   console.error("Failed to start server:", error);

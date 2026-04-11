@@ -10,12 +10,16 @@ export const aiCoach = async (req, res) => {
   try {
     const { message } = req.body;
 
+    if (!message) {
+      return res.status(400).json({ message: "Message is required" });
+    }
+
     const response = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: "Ti si profesionalni fitness i nutricionistički trener."
+          content: "You are a professional fitness and nutrition coach with expertise in meal planning, exercise science, and healthy lifestyle coaching."
         },
         {
           role: "user",
@@ -29,7 +33,7 @@ export const aiCoach = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("AI ERROR:", error);
-    res.status(500).json({ message: "AI greška" });
+    console.error("AI error:", error);
+    res.status(500).json({ message: "Failed to generate AI response", error: error.message });
   }
 };
