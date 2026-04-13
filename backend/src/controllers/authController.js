@@ -1,92 +1,91 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { sendEmail } from "../utils/email.js";
 
-// GENERATE TOKEN
+// 🔑 generate token
 const generateToken = (id) => {
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET is required to generate tokens");
-  }
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "7d"
+    expiresIn: "7d",
   });
 };
 
-// REGISTER
-export const registerUser = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "Name, email, and password are required" });
-    }
-
-    const userExists = await User.findOne({ email });
-
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    // 🔐 HASH PASSWORD
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword
-    });
-
-    res.status(201).json({
-      message: "User created successfully",
-      token: generateToken(user._id),
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
-      }
-    });
-
-  } catch (error) {
-    console.error("Registration error:", error);
-    res.status(500).json({ message: "Failed to create user" });
-  }
-};
-
-// LOGIN
-export const loginUser = async (req, res) => {
+// ✅ REGISTER
+export const register = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+      return res.status(400).json({ message: "Missing fields" });
     }
+
+    const exists = await User.findOne({ email });
+    if (exists) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    // 🔥 referral code
+    const referralCode = Math.random().toString(36).substring(2, 8);
+
+    const user = await User.create({
+      email,
+      password: hashed,
+      referralCode,
+      isPremium: false,
+    });
+
+    // 🔥 EMAIL (FULL IMPLEMENTATION)
+    await sendEmail(
+      user.email,
+      "Welcome to NutriFlow",
+      "Your transformation starts now 💪"
+    );
+
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ✅ LOGIN
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // 🔐 PROVERA HASH PASSWORD
-    const isMatch = await bcrypt.compare(password, user.password);
+    const match = await bcrypt.compare(password, user.password);
 
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
+    if (!match) {
+      return res.status(400).json({ message: "Invalid credentials" });
     }
+
+    const token = generateToken(user._id);
 
     res.json({
-      message: "Login successful",
-      token: generateToken(user._id),
+      token,
       user: {
         id: user._id,
-        name: user.name,
-        email: user.email
-      }
+        email: user.email,
+      },
     });
-
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Failed to login" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };

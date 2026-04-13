@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 
-const analyticsSchema = new mongoose.Schema({
-  user: mongoose.Schema.Types.ObjectId,
+const schema = new mongoose.Schema({
+  user: String,
   action: String,
-}, { timestamps: true });
+  createdAt: { type: Date, default: Date.now },
+});
 
-export default mongoose.model("Analytics", analyticsSchema);
+export default mongoose.model("Analytics", schema);

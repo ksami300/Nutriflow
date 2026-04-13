@@ -1,41 +1,9 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-    },
+const userSchema = new mongoose.Schema({
+  email: String,
+  password: String,
+  isPremium: { type: Boolean, default: false }
+});
 
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-
-    password: {
-      type: String,
-      required: true,
-    },
-
-    // 💎 PREMIUM STATUS
-    isPremium: {
-      type: Boolean,
-      default: false,
-    },
-
-    // 👑 ROLE FOR AUTHORIZATION
-    role: {
-      type: String,
-      enum: ["user", "admin"],
-      default: "user",
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-const User = mongoose.model("User", userSchema);
-
-export default User;
+module.exports = mongoose.model("User", userSchema);

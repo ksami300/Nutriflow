@@ -1,11 +1,8 @@
-import express from "express";
-import { createMealPlan, getMealPlans, deleteMealPlan } from "../controllers/mealPlanController.js";
-import { protect } from "../middlewares/authMiddleware.js";
+const router = require("express").Router();
+const auth = require("../middlewares/authMiddleware");
+const { createPlan, getPlans } = require("../controllers/mealPlanController");
 
-const router = express.Router();
+router.post("/", auth, createPlan);
+router.get("/", auth, getPlans);
 
-router.post("/", protect, createMealPlan);
-router.get("/", protect, getMealPlans);
-router.delete("/:id", protect, deleteMealPlan);
-
-export default router;
+module.exports = router;

@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
-import { getToken } from "@/utils/auth";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default function AuthGuard({ children }: { children: ReactNode }) {
+export default function AuthGuard({ children }: any) {
+  const router = useRouter();
+
   useEffect(() => {
-    const token = getToken();
-
+    const token = localStorage.getItem("token");
     if (!token) {
-      window.location.href = "/login";
+      router.push("/login");
     }
   }, []);
 

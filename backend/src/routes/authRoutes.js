@@ -1,21 +1,7 @@
-import express from "express";
-import { registerUser, loginUser } from "../controllers/authController.js";
-import { protect } from "../middlewares/authMiddleware.js";
+const router = require("express").Router();
+const { register, login } = require("../controllers/authController");
 
-const router = express.Router();
+router.post("/register", register);
+router.post("/login", login);
 
-// REGISTER
-router.post("/register", registerUser);
-
-// LOGIN
-router.post("/login", loginUser);
-
-// PROTECTED PROFILE
-router.get("/profile", protect, (req, res) => {
-  res.json({
-    message: "Protected route working",
-    user: req.user
-  });
-});
-
-export default router;
+module.exports = router;
