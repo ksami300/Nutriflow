@@ -1,9 +1,9 @@
-import express from "express";
-import { protect } from "../middlewares/authMiddleware.js";
-import { aiCoach } from "../controllers/aiController.js";
+const express = require("express");
+const authMiddleware = require("../middleware/authMiddleware");
+const { aiCoach } = require("../controllers/aiController");
 
 const router = express.Router();
 
-router.post("/", protect, aiCoach);
+router.post("/", authMiddleware, aiCoach);
 
-export default router;
+module.exports = router;

@@ -1,6 +1,6 @@
-import PDFDocument from "pdfkit";
+const PDFDocument = require("pdfkit");
 
-export const generatePDF = (plan, res) => {
+exports.generatePDF = (plan, res) => {
   const doc = new PDFDocument();
 
   res.setHeader("Content-Type", "application/pdf");
@@ -18,8 +18,3 @@ export const generatePDF = (plan, res) => {
 
   doc.end();
 };
-router.get("/:id/pdf", protect, async (req, res) => {
-  const plan = await MealPlan.findById(req.params.id);
-
-  generatePDF(plan, res);
-});

@@ -2,8 +2,8 @@ const adminOnly = (req, res, next) => {
   if (req.user && req.user.role === "admin") {
     next();
   } else {
-    return res.status(403).json({ message: "Nema pristup" });
+    return res.status(403).json({ message: "Access denied" });
   }
 };
 
-export default adminOnly;
+module.exports = adminOnly;

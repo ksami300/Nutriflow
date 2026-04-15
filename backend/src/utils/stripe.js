@@ -1,4 +1,4 @@
-import Stripe from "stripe";
+const Stripe = require("stripe");
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
@@ -7,4 +7,4 @@ if (!stripeSecretKey) {
 
 const stripe = new Stripe(stripeSecretKey);
 
-export default stripe;
+module.exports = stripe;

@@ -1,7 +1,7 @@
-import User from "../models/User.js";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
-import { sendEmail } from "../utils/email.js";
+const User = require("../models/User");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const { sendEmail } = require("../utils/email");
 
 // 🔑 generate token
 const generateToken = (id) => {
@@ -11,11 +11,11 @@ const generateToken = (id) => {
 };
 
 // ✅ REGISTER
-export const register = async (req, res) => {
+exports.register = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!email || !password) {
+    if (!name || !email || !password) {
       return res.status(400).json({ message: "Missing fields" });
     }
 
@@ -30,6 +30,7 @@ export const register = async (req, res) => {
     const referralCode = Math.random().toString(36).substring(2, 8);
 
     const user = await User.create({
+      name,
       email,
       password: hashed,
       referralCode,
@@ -49,7 +50,9 @@ export const register = async (req, res) => {
       token,
       user: {
         id: user._id,
+        name: user.name,
         email: user.email,
+        isPremium: user.isPremium,
       },
     });
   } catch (err) {
@@ -59,7 +62,7 @@ export const register = async (req, res) => {
 };
 
 // ✅ LOGIN
-export const login = async (req, res) => {
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -81,7 +84,32 @@ export const login = async (req, res) => {
       token,
       user: {
         id: user._id,
+        name: user.name,
         email: user.email,
+        isPremium: user.isPremium,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ✅ PROFILE
+exports.profile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isPremium: user.isPremium,
       },
     });
   } catch (err) {

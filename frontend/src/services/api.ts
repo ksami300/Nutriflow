@@ -100,6 +100,23 @@ export const deleteMealPlan = async (id: string, token: string) => {
 };
 
 // PAYMENTS
+export const createCheckout = async (token: string) => {
+  const res = await fetch(`${API_URL}/api/payments/checkout`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to create checkout");
+  }
+
+  return res.json();
+};
+
+// PAYMENTS
 export const upgradePremium = async (token: string) => {
   const res = await fetch(`${API_URL}/api/payments/upgrade-premium`, {
     method: "POST",

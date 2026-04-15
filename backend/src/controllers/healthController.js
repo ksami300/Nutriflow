@@ -1,4 +1,4 @@
-export const getHealth = (req, res) => {
+exports.getHealth = (req, res) => {
   res.status(200).json({
     status: "OK",
     message: "NutriFlow API is running",

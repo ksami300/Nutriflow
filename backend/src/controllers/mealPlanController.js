@@ -1,117 +1,117 @@
 const MealPlan = require("../models/MealPlan");
-const User = require("../models/User");
 
-// 🧠 CALCULATION FUNCTIONS
-const calculateBMR = (weight, height, age, gender) => {
-  if (gender === "male") {
-    return 10 * weight + 6.25 * height - 5 * age + 5;
-  } else {
-    return 10 * weight + 6.25 * height - 5 * age - 161;
-  }
-};
-
-const activityMultiplier = {
-  sedentary: 1.2,
-  light: 1.375,
-  moderate: 1.55,
-  active: 1.725,
-  veryActive: 1.9
-};
-
-const calculateCalories = (bmr, activityLevel, goal) => {
-  let tdee = bmr * (activityMultiplier[activityLevel] || 1.2);
-
-  if (goal === "lose") return Math.round(tdee * 0.85);
-  if (goal === "gain") return Math.round(tdee * 1.15);
-  return Math.round(tdee);
-};
-
-// 🍽️ SIMPLE MEAL DB
-const mealsDB = [
-  { name: "Eggs & Toast", calories: 400, category: "breakfast" },
-  { name: "Oatmeal + Banana", calories: 350, category: "breakfast" },
-  { name: "Chicken Rice Bowl", calories: 700, category: "lunch" },
-  { name: "Beef + Potatoes", calories: 800, category: "lunch" },
-  { name: "Protein Shake", calories: 250, category: "snack" },
-  { name: "Greek Yogurt", calories: 200, category: "snack" },
-  { name: "Salmon + Veggies", calories: 600, category: "dinner" },
-  { name: "Pasta + Chicken", calories: 700, category: "dinner" }
-];
-
-// 🎯 GENERATE PLAN
 exports.generatePlan = async (req, res) => {
   try {
     const userId = req.user.id;
     const { goal, weight, height, age, gender, activityLevel } = req.body;
 
-    const user = await User.findById(userId);
-
-    // 🔒 FREE LIMIT
-    if (!user.isPremium) {
-      const count = await MealPlan.countDocuments({ user: userId });
-
-      if (count >= 1) {
-        return res.status(403).json({
-          message: "Free limit reached. Upgrade to Premium."
-        });
-      }
+    // Validation
+    if (!goal || !weight || !height || !age || !gender || !activityLevel) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // 🧠 CALCULATIONS
-    const bmr = calculateBMR(weight, height, age, gender);
-    const calories = calculateCalories(bmr, activityLevel, goal);
-    const tdee = Math.round(bmr * (activityMultiplier[activityLevel] || 1.2));
+    // 🔒 FREE LIMIT
+    const count = await MealPlan.countDocuments({ user: userId });
 
-    // 🍽️ BUILD MEALS
-    const selectedMeals = [
-      mealsDB[0],
-      mealsDB[2],
-      mealsDB[4],
-      mealsDB[6]
+    if (!req.user.isPremium && count >= 3) {
+      return res.status(403).json({
+        message: "Free limit reached. Upgrade to premium.",
+      });
+    }
+
+    // 🧠 BASIC CALCULATION
+    const bmr =
+      gender === "male"
+        ? 10 * weight + 6.25 * height - 5 * age + 5
+        : 10 * weight + 6.25 * height - 5 * age - 161;
+
+    const activityMap = {
+      sedentary: 1.2,
+      light: 1.375,
+      moderate: 1.55,
+      active: 1.725,
+      veryActive: 1.9,
+    };
+
+    const tdee = bmr * activityMap[activityLevel];
+
+    let calories = tdee;
+    if (goal === "lose") calories -= 500;
+    if (goal === "gain") calories += 500;
+
+    // 🍗 MACROS (SAMO PREMIUM)
+    let protein = null;
+    let carbs = null;
+    let fats = null;
+
+    if (req.user.isPremium) {
+      protein = Math.round(weight * 2);
+      fats = Math.round((calories * 0.25) / 9);
+      carbs = Math.round((calories - protein * 4 - fats * 9) / 4);
+    }
+
+    const meals = [
+      { name: "Chicken + Rice", calories: Math.round(calories * 0.3) },
+      { name: "Eggs + Avocado", calories: Math.round(calories * 0.25) },
+      { name: "Salmon + Potato", calories: Math.round(calories * 0.3) },
+      { name: "Protein Shake", calories: Math.round(calories * 0.15) },
     ];
 
-    // 💾 SAVE
     const plan = await MealPlan.create({
       user: userId,
       goal,
-      calories,
-      bmr: Math.round(bmr),
+      calories: Math.round(calories),
+      bmr,
       tdee,
-      meals: selectedMeals
+      protein,
+      carbs,
+      fats,
+      meals,
     });
 
-    res.status(201).json(plan);
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.json({ plan });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error generating plan" });
   }
 };
 
-// 📦 GET PLANS
 exports.getPlans = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    const plans = await MealPlan.find({ user: userId }).sort({ createdAt: -1 });
-    const user = await User.findById(userId);
+    const plans = await MealPlan.find({ user: req.user.id }).sort({
+      createdAt: -1,
+    });
 
     res.json({
       plans,
-      isPremium: user.isPremium
+      isPremium: req.user.isPremium,
     });
-
-  } catch (error) {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Error fetching plans" });
   }
 };
 
-// ❌ DELETE
 exports.deletePlan = async (req, res) => {
   try {
-    await MealPlan.findByIdAndDelete(req.params.id);
-    res.json({ message: "Deleted" });
-  } catch (error) {
-    res.status(500).json({ message: "Delete failed" });
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const plan = await MealPlan.findById(id);
+
+    if (!plan) {
+      return res.status(404).json({ message: "Plan not found" });
+    }
+
+    if (plan.user.toString() !== userId) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    await MealPlan.findByIdAndDelete(id);
+
+    res.json({ message: "Plan deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error deleting plan" });
   }
 };

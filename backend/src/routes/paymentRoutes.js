@@ -1,10 +1,17 @@
-import express from "express";
-import { createCheckout, upgradePremium } from "../controllers/paymentController.js";
-import { protect } from "../middlewares/authMiddleware.js";
-
+const express = require("express");
 const router = express.Router();
 
-router.post("/checkout", protect, createCheckout);
-router.post("/upgrade", protect, upgradePremium);
+const authMiddleware = require("../middleware/authMiddleware");
 
-export default router;
+const {
+  createCheckout,
+  stripeWebhook,
+} = require("../controllers/paymentController");
+
+// 💳 CREATE CHECKOUT SESSION
+router.post("/checkout", authMiddleware, createCheckout);
+
+// 🔥 STRIPE WEBHOOK
+router.post("/webhook", stripeWebhook);
+
+module.exports = router;
