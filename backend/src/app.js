@@ -1,40 +1,44 @@
 const express = require("express");
 const cors = require("cors");
-const errorHandler = require("./middleware/errorMiddleware");
+
+const authRoutes = require("./routes/authRoutes");
+const mealPlanRoutes = require("./routes/mealPlanRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const healthRoutes = require("./routes/healthRoutes");
+
+const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
 
-// 🔐 CORS CONFIGURATION
+// ✅ CORS (koristi FRONTEND_URL iz .env)
 const corsOptions = {
   origin: process.env.FRONTEND_URL || "http://localhost:3000",
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 app.use(cors(corsOptions));
 
-// ❗ WEBHOOK MORA PRE JSON PARSERA (raw body)
-app.post("/api/payments/webhook", express.raw({ type: "application/json" }), (req, res) => {
-  const { stripeWebhook } = require("./controllers/paymentController");
-  stripeWebhook(req, res);
-});
+// ❗ STRIPE WEBHOOK MORA PRE express.json()
+app.post(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" }),
+  (req, res) => {
+    const { stripeWebhook } = require("./controllers/paymentController");
+    stripeWebhook(req, res);
+  }
+);
 
-// ❗ NORMAL JSON ZA API
-app.use("/api", express.json());
+// ✅ TEK POSLE ide JSON parser
+app.use(express.json());
 
-// ROUTES
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/meal-plans", require("./routes/mealPlanRoutes"));
-app.use("/api/payments", require("./routes/paymentRoutes"));
-app.use("/api/ai", require("./routes/aiRoutes"));
-app.use("/api/health", require("./routes/healthRoutes"));
+// ================= ROUTES =================
+app.use("/api/auth", authRoutes);
+app.use("/api/meal-plans", mealPlanRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/health", healthRoutes);
 
-app.get("/", (req, res) => {
-  res.send("API WORKING 🚀");
-});
-
-// 🔥 GLOBAL ERROR HANDLER (mora biti na kraju)
+// ================= ERRORS =================
+app.use(notFound);
 app.use(errorHandler);
 
 module.exports = app;

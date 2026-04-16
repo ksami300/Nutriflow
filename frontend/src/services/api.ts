@@ -1,45 +1,49 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
-// AUTH
+// 🔐 Helper (automatski token)
+const authHeaders = () => {
+  const token = localStorage.getItem("token");
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: token ? `Bearer ${token}` : "",
+  };
+};
+
+// ================= AUTH =================
+
 export const registerUser = async (name: string, email: string, password: string) => {
   const res = await fetch(`${API_URL}/api/auth/register`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, email, password }),
   });
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Registration failed");
-  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Registration failed");
 
-  return res.json();
+  return data;
 };
 
 export const loginUser = async (email: string, password: string) => {
   const res = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Login failed");
-  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Login failed");
 
-  return res.json();
+  // 🔥 AUTOMATSKO ČUVANJE TOKENA
+  localStorage.setItem("token", data.token);
+
+  return data;
 };
 
-export const getProfile = async (token: string) => {
+export const getProfile = async () => {
   const res = await fetch(`${API_URL}/api/auth/profile`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: authHeaders(),
   });
 
   if (!res.ok) throw new Error("Failed to fetch profile");
@@ -47,12 +51,11 @@ export const getProfile = async (token: string) => {
   return res.json();
 };
 
-// MEAL PLANS
-export const getMealPlans = async (token: string) => {
+// ================= MEAL PLANS =================
+
+export const getMealPlans = async () => {
   const res = await fetch(`${API_URL}/api/meal-plans`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: authHeaders(),
   });
 
   if (!res.ok) throw new Error("Failed to fetch meal plans");
@@ -60,85 +63,40 @@ export const getMealPlans = async (token: string) => {
   return res.json();
 };
 
-export const createMealPlan = async (
-  goal: string,
-  weight: number,
-  height: number,
-  age: number,
-  gender: string,
-  activityLevel: string,
-  token: string
-) => {
+export const createMealPlan = async (body: any) => {
   const res = await fetch(`${API_URL}/api/meal-plans`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ goal, weight, height, age, gender, activityLevel }),
+    headers: authHeaders(),
+    body: JSON.stringify(body),
   });
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to create meal plan");
-  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Failed to create meal plan");
 
-  return res.json();
+  return data;
 };
 
-export const deleteMealPlan = async (id: string, token: string) => {
+export const deleteMealPlan = async (id: string) => {
   const res = await fetch(`${API_URL}/api/meal-plans/${id}`, {
     method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: authHeaders(),
   });
 
-  if (!res.ok) throw new Error("Failed to delete meal plan");
+  if (!res.ok) throw new Error("Failed to delete");
 
   return res.json();
 };
 
-// PAYMENTS
-export const createCheckout = async (token: string) => {
-  const res = await fetch(`${API_URL}/api/payments/checkout`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+// ================= PAYMENTS =================
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to create checkout");
-  }
-
-  return res.json();
-};
-
-// PAYMENTS
-export const upgradePremium = async (token: string) => {
-  const res = await fetch(`${API_URL}/api/payments/upgrade-premium`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!res.ok) throw new Error("Failed to upgrade");
-
-  return res.json();
-};
-
-export const createCheckoutSession = async (token: string) => {
+export const createCheckoutSession = async () => {
   const res = await fetch(`${API_URL}/api/payments/create-checkout-session`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: authHeaders(),
   });
 
-  if (!res.ok) throw new Error("Failed to create checkout session");
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Stripe failed");
 
-  return res.json();
+  return data;
 };

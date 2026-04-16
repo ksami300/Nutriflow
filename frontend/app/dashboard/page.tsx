@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { Input, Select } from "@/components/FormInputs";
+import { Button, IconButton } from "@/components/Button";
+import { Card, CardBody, CardHeader, CardTitle, CardDescription, EmptyState, Alert } from "@/components/Card";
+import { Spinner, Badge, Progress, SkeletonText } from "@/components/UI";
+import { SkeletonDashboard, SkeletonGrid, SkeletonCard } from "@/components/LoadingSkeleton";
+import AICoach from "@/components/AICoach";
 
 interface Meal {
   name: string;
@@ -28,6 +34,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState({
     goal: "maintain",
@@ -74,9 +81,37 @@ export default function Dashboard() {
     }
   };
 
+  // Validate form
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (formData.weight < 30 || formData.weight > 300) {
+      errors.weight = "Weight must be between 30 and 300 kg";
+    }
+    if (formData.height < 100 || formData.height > 250) {
+      errors.height = "Height must be between 100 and 250 cm";
+    }
+    if (formData.age < 13 || formData.age > 120) {
+      errors.age = "Age must be between 13 and 120";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   // Generate plan
   const generatePlan = async () => {
+    if (!validateForm()) {
+      toast.error("Please fix the form errors");
+      return;
+    }
+
     const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
 
     setFormLoading(true);
 
@@ -97,8 +132,9 @@ export default function Dashboard() {
 
       const data = await res.json();
       setPlans([data.plan, ...plans]);
-      toast.success("Plan generated!");
+      toast.success("🎉 Meal plan generated successfully!");
       setShowForm(false);
+      setFormErrors({});
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error generating plan";
       toast.error(message);
@@ -111,6 +147,8 @@ export default function Dashboard() {
   const deletePlan = async (planId: string) => {
     const token = localStorage.getItem("token");
 
+    if (!confirm("Are you sure you want to delete this plan?")) return;
+
     try {
       const res = await fetch(`${API}/api/meal-plans/${planId}`, {
         method: "DELETE",
@@ -122,14 +160,14 @@ export default function Dashboard() {
       if (!res.ok) throw new Error("Failed to delete plan");
 
       setPlans(plans.filter((p) => p._id !== planId));
-      toast.success("Plan deleted!");
+      toast.success("Plan deleted");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error deleting plan";
       toast.error(message);
     }
   };
 
-  // Upgrade
+  // Upgrade to premium
   const upgrade = async () => {
     const token = localStorage.getItem("token");
 
@@ -158,294 +196,334 @@ export default function Dashboard() {
 
   // Logout
   const logout = () => {
-    localStorage.removeItem("token");
-    router.replace("/login");
+    if (confirm("Are you sure you want to logout?")) {
+      localStorage.removeItem("token");
+      router.replace("/login");
+    }
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-4">⏳</div>
-          <p className="text-slate-600">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-primary-50/30 to-neutral-100">
       {/* HEADER */}
-      <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            NutriFlow
-          </h1>
+      <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-neutral-200 z-40 animate-slideDown">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl">🥗</div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-accent-light bg-clip-text text-transparent">
+              NutriFlow
+            </h1>
+          </div>
 
           <div className="flex items-center gap-4">
             {isPremium && (
-              <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
-                💎 Premium
-              </span>
+              <Badge
+                label="💎 Premium Member"
+                variant="success"
+                size="md"
+              />
             )}
-            <button
+            <IconButton
+              variant="outline"
+              size="md"
               onClick={logout}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+              title="Logout"
             >
-              Logout
-            </button>
+              🚪
+            </IconButton>
           </div>
         </div>
       </header>
 
       {/* MAIN */}
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 py-12 space-y-8">
         {/* Premium CTA */}
         {!isPremium && (
-          <section className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-2xl p-8 shadow-lg">
-            <div className="max-w-2xl">
-              <h2 className="text-3xl font-bold mb-2">Unlock Premium Features</h2>
-              <p className="text-blue-100 mb-6">
-                Get detailed macro breakdowns, personalized meal suggestions for dietary restrictions, and unlimited meal plans.
-              </p>
-              <button
+          <Alert
+            type="info"
+            title="✨ Unlock Premium Features"
+            description="Get unlimited meal plans, detailed macro breakdowns, and personalized suggestions for dietary restrictions."
+            action={
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={upgrade}
-                className="px-6 py-3 bg-white text-blue-600 rounded-lg font-bold hover:bg-slate-100 transition"
               >
                 Upgrade to Premium (€9.99/month)
-              </button>
-            </div>
-          </section>
+              </Button>
+            }
+          />
         )}
 
-        {/* Generate Plan Form */}
+        {/* Form Section */}
         {!showForm ? (
-          <button
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
             onClick={() => setShowForm(true)}
-            className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-4 rounded-xl font-bold hover:shadow-lg transition text-lg"
+            className="h-16 text-lg font-bold"
           >
-            ⚡ Generate New Plan
-          </button>
+            ⚡ Generate New Meal Plan
+          </Button>
         ) : (
-          <section className="bg-white rounded-2xl p-8 shadow-md">
-            <h2 className="text-2xl font-bold mb-6">Create Your Meal Plan</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Goal
-                </label>
-                <select
+          <Card variant="elevated" padded>
+            <CardHeader>
+              <CardTitle>Create Your Personalized Meal Plan</CardTitle>
+              <CardDescription>Fill in your details and we'll calculate the perfect calorie target for you</CardDescription>
+            </CardHeader>
+            <CardBody className="space-y-6">
+              {/* Form Inputs */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Select
+                  label="Goal"
+                  options={[
+                    { value: "lose", label: "Lose Weight" },
+                    { value: "maintain", label: "Maintain Weight" },
+                    { value: "gain", label: "Gain Weight" },
+                  ]}
                   value={formData.goal}
-                  onChange={(e) =>
-                    setFormData({ ...formData, goal: e.target.value })
-                  }
-                  className="w-full border border-slate-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="lose">Lose Weight</option>
-                  <option value="maintain">Maintain</option>
-                  <option value="gain">Gain Weight</option>
-                </select>
-              </div>
+                  onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
+                  required
+                />
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Weight (kg)
-                </label>
-                <input
+                <Input
+                  label="Weight (kg)"
                   type="number"
                   value={formData.weight}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      weight: parseFloat(e.target.value),
-                    })
-                  }
-                  className="w-full border border-slate-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) })}
+                  error={formErrors.weight}
+                  min="30"
+                  max="300"
+                  required
+                  icon="⚖️"
                 />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Height (cm)
-                </label>
-                <input
+                <Input
+                  label="Height (cm)"
                   type="number"
                   value={formData.height}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      height: parseFloat(e.target.value),
-                    })
-                  }
-                  className="w-full border border-slate-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => setFormData({ ...formData, height: parseFloat(e.target.value) })}
+                  error={formErrors.height}
+                  min="100"
+                  max="250"
+                  required
+                  icon="📏"
                 />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Age
-                </label>
-                <input
+                <Input
+                  label="Age"
                   type="number"
                   value={formData.age}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      age: parseFloat(e.target.value),
-                    })
-                  }
-                  className="w-full border border-slate-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => setFormData({ ...formData, age: parseFloat(e.target.value) })}
+                  error={formErrors.age}
+                  min="13"
+                  max="120"
+                  required
+                  icon="🎂"
+                />
+
+                <Select
+                  label="Gender"
+                  options={[
+                    { value: "male", label: "Male" },
+                    { value: "female", label: "Female" },
+                  ]}
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  required
+                />
+
+                <Select
+                  label="Activity Level"
+                  options={[
+                    { value: "sedentary", label: "Sedentary (Little activity)" },
+                    { value: "light", label: "Light (1-3 times/week)" },
+                    { value: "moderate", label: "Moderate (3-5 times/week)" },
+                    { value: "active", label: "Active (6-7 times/week)" },
+                    { value: "veryActive", label: "Very Active (2x/day)" },
+                  ]}
+                  value={formData.activityLevel}
+                  onChange={(e) => setFormData({ ...formData, activityLevel: e.target.value })}
+                  required
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Gender
-                </label>
-                <select
-                  value={formData.gender}
-                  onChange={(e) =>
-                    setFormData({ ...formData, gender: e.target.value })
-                  }
-                  className="w-full border border-slate-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="primary"
+                  size="md"
+                  fullWidth
+                  onClick={generatePlan}
+                  isLoading={formLoading}
                 >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Activity Level
-                </label>
-                <select
-                  value={formData.activityLevel}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      activityLevel: e.target.value,
-                    })
-                  }
-                  className="w-full border border-slate-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  Generate Plan
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  fullWidth
+                  onClick={() => {
+                    setShowForm(false);
+                    setFormErrors({});
+                  }}
                 >
-                  <option value="sedentary">Sedentary</option>
-                  <option value="light">Light</option>
-                  <option value="moderate">Moderate</option>
-                  <option value="active">Active</option>
-                  <option value="veryActive">Very Active</option>
-                </select>
+                  Cancel
+                </Button>
               </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={generatePlan}
-                disabled={formLoading}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {formLoading ? "Generating..." : "Generate Plan"}
-              </button>
-              <button
-                onClick={() => setShowForm(false)}
-                className="flex-1 bg-slate-200 text-slate-700 py-3 rounded-lg font-bold hover:bg-slate-300 transition"
-              >
-                Cancel
-              </button>
-            </div>
-          </section>
+            </CardBody>
+          </Card>
         )}
 
-        {/* Plans Grid */}
-        {plans.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl">
-            <p className="text-slate-500 text-lg">
-              {showForm ? "Generate your first plan..." : "No plans yet. Generate one to get started!"}
+        {/* Plans Section */}
+        <div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-neutral-900">Your Meal Plans</h2>
+            <p className="text-neutral-600 text-sm">
+              {plans.length === 0
+                ? "No plans yet"
+                : `${plans.length} plan${plans.length !== 1 ? "s" : ""} created`}
             </p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {plans.map((plan) => (
-              <div
-                key={plan._id}
-                className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition relative overflow-hidden"
-              >
-                {/* Premium Lock */}
-                {!isPremium && (
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                    <div className="text-center text-white">
-                      <p className="text-2xl mb-2">🔒</p>
-                      <p className="font-semibold">Premium Only</p>
-                    </div>
-                  </div>
-                )}
 
-                {/* Content */}
-                <div className={`space-y-4 ${!isPremium ? "blur-sm" : ""}`}>
-                  <div>
-                    <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold capitalize">
-                      {plan.goal}
-                    </span>
-                    <p className="text-sm text-slate-500 mt-2">
-                      {new Date(plan.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <p className="text-3xl font-bold text-slate-900">
-                      {plan.calories}
-                      <span className="text-sm text-slate-500 ml-1">kcal</span>
-                    </p>
-                  </div>
-
-                  {/* Macros */}
-                  {isPremium && plan.protein ? (
-                    <div className="grid grid-cols-3 gap-2 bg-slate-100 p-3 rounded-lg">
-                      <div className="text-center">
-                        <p className="text-xs text-slate-600">Protein</p>
-                        <p className="font-bold text-lg">{plan.protein}g</p>
+          {plans.length === 0 ? (
+            <EmptyState
+              icon="📋"
+              title="No Meal Plans Yet"
+              description="Create your first personalized meal plan using the form above"
+              action={
+                <Button
+                  variant="primary"
+                  onClick={() => setShowForm(true)}
+                >
+                  Create Plan
+                </Button>
+              }
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {plans.map((plan, idx) => (
+                <Card
+                  key={plan._id}
+                  variant="elevated"
+                  hoverable
+                  padded
+                  className="relative min-h-full animate-slideUp"
+                  style={{ animationDelay: `${idx * 50}ms` }}
+                >
+                  {/* Lock Overlay for Non-Premium */}
+                  {!isPremium && plan.meals.length > 0 && (
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                      <div className="text-center text-white">
+                        <p className="text-3xl mb-2">🔒</p>
+                        <p className="font-bold text-sm">Upgrade to view</p>
                       </div>
-                      <div className="text-center">
-                        <p className="text-xs text-slate-600">Carbs</p>
-                        <p className="font-bold text-lg">{plan.carbs}g</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs text-slate-600">Fats</p>
-                        <p className="font-bold text-lg">{plan.fats}g</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-slate-100 p-3 rounded-lg text-center text-slate-600 text-sm">
-                      Upgrade to see detailed macros
                     </div>
                   )}
 
-                  {/* Meals */}
-                  {isPremium && (
-                    <div className="space-y-2 border-t pt-4">
-                      <p className="text-sm font-semibold text-slate-700">Meals:</p>
-                      {plan.meals.map((meal, idx) => (
-                        <div key={idx} className="flex justify-between text-sm">
-                          <span className="text-slate-600">{meal.name}</span>
-                          <span className="font-medium">{meal.calories}kcal</span>
+                  {/* Content */}
+                  <div className={`space-y-4 ${!isPremium && plan.meals.length > 0 ? "blur-sm" : ""}`}>
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                      <Badge
+                        label={`🎯 ${plan.goal.charAt(0).toUpperCase() + plan.goal.slice(1)}`}
+                        variant="primary"
+                        size="md"
+                      />
+                      <span className="text-xs text-neutral-500">
+                        {new Date(plan.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Calories */}
+                    <div className="space-y-2">
+                      <p className="text-sm text-neutral-600 font-medium">Daily Calories</p>
+                      <p className="text-4xl font-bold text-primary-600">
+                        {plan.calories}
+                        <span className="text-base text-neutral-600 ml-2">kcal</span>
+                      </p>
+                    </div>
+
+                    {/* Metrics */}
+                    <div className="grid grid-cols-2 gap-3 bg-neutral-50 p-3 rounded-lg">
+                      <div>
+                        <p className="text-xs text-neutral-600 font-medium">BMR</p>
+                        <p className="font-bold text-lg">{plan.bmr.toFixed(0)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-neutral-600 font-medium">TDEE</p>
+                        <p className="font-bold text-lg">{plan.tdee.toFixed(0)}</p>
+                      </div>
+                    </div>
+
+                    {/* Macros */}
+                    {isPremium && plan.protein ? (
+                      <div className="space-y-3 pt-3 border-t border-neutral-200">
+                        <p className="text-xs font-semibold text-neutral-700">Macronutrient Targets</p>
+                        <div className="space-y-2">
+                          <Progress
+                            value={plan.protein}
+                            max={200}
+                            label={`Protein: ${plan.protein}g`}
+                            showValue={false}
+                          />
+                          <Progress
+                            value={plan.carbs || 0}
+                            max={400}
+                            label={`Carbs: ${plan.carbs}g`}
+                            showValue={false}
+                          />
+                          <Progress
+                            value={plan.fats || 0}
+                            max={100}
+                            label={`Fats: ${plan.fats}g`}
+                            showValue={false}
+                          />
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    ) : null}
 
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => deletePlan(plan._id)}
-                    className="w-full mt-4 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition font-medium"
-                  >
-                    Delete Plan
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                    {/* Meals */}
+                    {isPremium && plan.meals.length > 0 && (
+                      <div className="space-y-2 pt-3 border-t border-neutral-200">
+                        <p className="text-xs font-semibold text-neutral-700">Meal Breakdown</p>
+                        {plan.meals.map((meal, i) => (
+                          <div key={i} className="flex items-center justify-between text-sm">
+                            <span className="text-neutral-700">{meal.name}</span>
+                            <Badge label={`${meal.calories}kcal`} variant="neutral" size="sm" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Delete Button */}
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      fullWidth
+                      onClick={() => deletePlan(plan._id)}
+                      className="mt-4"
+                    >
+                      Delete Plan
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
+
+      {/* AI Coach */}
+      <AICoach />
     </div>
   );
 }
