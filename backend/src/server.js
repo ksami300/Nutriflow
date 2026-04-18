@@ -3,11 +3,20 @@ const cors = require("cors");
 
 const app = express();
 
-// middleware
-app.use(cors());
+// ✅ CORS (PRODUCTION READY)
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://nutriflow.vercel.app" // kad deployuješ frontend
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
 app.use(express.json());
 
-// ROOT (OBAVEZNO)
+// ✅ ROOT
 app.get("/", (req, res) => {
   res.status(200).json({
     status: "OK",
@@ -15,12 +24,12 @@ app.get("/", (req, res) => {
   });
 });
 
-// HEALTH CHECK (BITNO ZA RAILWAY)
+// ✅ HEALTH (Railway)
 app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
 
-// TEST API
+// ✅ TEST API
 app.get("/api/test", (req, res) => {
   res.json({ msg: "API radi kako treba 🔥" });
 });
