@@ -4,12 +4,10 @@ const cors = require("cors");
 const app = express();
 
 // ✅ CORS (PRODUCTION READY)
-app.use(
-  cors({
-    origin: "*", // 🔥 PRIVREMENO ZA TEST
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  })
-);
+const cors = require("cors");
+
+// 🔥 NAJBITNIJE (open CORS za debug)
+app.use(cors());
 
 app.use(express.json());
 
