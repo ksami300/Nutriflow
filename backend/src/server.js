@@ -4,15 +4,12 @@ const cors = require("cors");
 const app = express();
 
 // ✅ CORS (PRODUCTION READY)
-app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://nutriflow.vercel.app" // kad deployuješ frontend
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "*", // 🔥 PRIVREMENO ZA TEST
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  })
+);
 
 app.use(express.json());
 
