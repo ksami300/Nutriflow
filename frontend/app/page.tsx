@@ -1,27 +1,60 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function Home() {
-  const router = useRouter();
+  const [result, setResult] = useState<string>("");
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      router.replace("/dashboard");
-    } else {
-      router.replace("/login");
+  const testAPI = async () => {
+    try {
+      setResult("Loading... ⏳");
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+      if (!API_URL) {
+        setResult("API URL nije definisan ❌");
+        return;
+      }
+
+      console.log("API URL:", API_URL);
+
+      const res = await fetch(`${API_URL}/api/test`, {
+        method: "GET",
+      });
+
+      if (!res.ok) {
+        throw new Error("Server error");
+      }
+
+      const data = await res.json();
+
+      setResult(data.msg || "Nema odgovora ❌");
+    } catch (error) {
+      console.error("FETCH ERROR:", error);
+      setResult("Greška sa API ❌");
     }
-  }, [router]);
+  };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-neutral-50 to-neutral-100">
-      <div className="text-center space-y-4 animate-slideUp">
-        <div className="w-16 h-16 rounded-full border-4 border-neutral-200 border-t-primary-600 animate-spin mx-auto"></div>
-        <h1 className="text-3xl font-bold text-neutral-900">NutriFlow</h1>
-        <p className="text-neutral-600">Loading your nutrition journey...</p>
-      </div>
-    </div>
+    <main className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-black to-gray-900 text-white">
+      <h1 className="text-5xl font-bold mb-4">
+        NutriFlow 🚀
+      </h1>
+
+      <p className="text-lg mb-6 text-center max-w-xl">
+        AI generiše personalizovan plan ishrane za tebe u sekundama.
+      </p>
+
+      <button
+        onClick={testAPI}
+        className="bg-green-500 px-8 py-4 rounded-2xl text-black font-bold hover:scale-110 transition"
+      >
+        Test Backend
+      </button>
+
+      <p className="mt-8 text-xl text-center max-w-xl">
+        {result}
+      </p>
+    </main>
   );
 }
