@@ -3,22 +3,19 @@ const cors = require("cors");
 
 const app = express();
 
-// ✅ CORS (open za debug)
-app.use(cors({
-  origin: "*"
-}));
-
+// ✅ CORS OPEN
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 // ✅ ROOT
 app.get("/", (req, res) => {
-  res.json({
+  res.status(200).json({
     status: "OK",
     message: "NutriFlow backend radi 🚀"
   });
 });
 
-// ✅ HEALTH (Railway koristi ovo)
+// ✅ HEALTH
 app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
@@ -28,18 +25,10 @@ app.get("/api/test", (req, res) => {
   res.json({ msg: "API radi kako treba 🔥" });
 });
 
-// 🔥 KLJUČNO
+// 🔥 NAJBITNIJE
 const PORT = process.env.PORT || 8080;
 
+// ❗ KLJUČNO: BEZ HOST PARAMETRA
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-// 🔥 OVO DODAJ (SPREČAVA CRASH)
-process.on("uncaughtException", (err) => {
-  console.error("UNCAUGHT ERROR:", err);
-});
-
-process.on("unhandledRejection", (err) => {
-  console.error("UNHANDLED PROMISE:", err);
+  console.log("✅ SERVER STARTED ON PORT:", PORT);
 });
