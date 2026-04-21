@@ -18,8 +18,10 @@ app.get("/", (req, res) => {
 });
 
 // ✅ Healthcheck (Railway koristi ovo)
-app.get("/health", (req, res) => {
-  res.status(200).send("OK");
+app.get("/api/test", (req, res) => {
+  res.json({
+    message: "API works 🚀"
+  });
 });
 
 // ✅ TEST LOGIN (privremeno dok ne napravimo pravi auth)
