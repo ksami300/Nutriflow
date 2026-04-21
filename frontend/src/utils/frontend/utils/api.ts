@@ -1,20 +1,31 @@
-export const API = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export const fetchAPI = async (url: string, options: any = {}) => {
-  const token = localStorage.getItem("token");
+if (!API_URL) {
+  throw new Error("API URL not defined");
+}
 
-  const res = await fetch(`${API}${url}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-  });
+export const api = {
+  get: async (path: string) => {
+    const res = await fetch(`${API_URL}${path}`);
+    if (!res.ok) throw new Error("Request failed");
+    return res.json();
+  },
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.message || "API error");
-  }
+  post: async (path: string, body: any) => {
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
-  return res.json();
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Request failed");
+    }
+
+    return data;
+  },
 };
