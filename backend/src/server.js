@@ -4,7 +4,7 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ CORS (za sada otvoren)
+// ✅ CORS (production kasnije zaključavamo)
 app.use(cors({
   origin: "*"
 }));
@@ -12,25 +12,33 @@ app.use(cors({
 // ✅ Middleware
 app.use(express.json());
 
-// ✅ Root route
+// =======================
+// ROUTES
+// =======================
+
+// ROOT
 app.get("/", (req, res) => {
   res.send("NutriFlow API working 🚀");
 });
 
-// ✅ Healthcheck (Railway koristi ovo)
+// ✅ HEALTHCHECK (OBAVEZNO ZA RAILWAY)
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
+// ✅ TEST API
 app.get("/api/test", (req, res) => {
-  res.json({
+  res.status(200).json({
     message: "API works 🚀"
   });
 });
 
-// ✅ TEST LOGIN (privremeno dok ne napravimo pravi auth)
+// ✅ LOGIN (test verzija)
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
 
-  // 🔥 fake login za test
   if (email === "demo@example.com" && password === "password123") {
-    return res.json({
+    return res.status(200).json({
       token: "test-token-123"
     });
   }
@@ -40,9 +48,12 @@ app.post("/api/auth/login", (req, res) => {
   });
 });
 
-// ✅ PORT (Railway obavezno koristi ovo)
+// =======================
+// START SERVER
+// =======================
+
 const PORT = process.env.PORT || 8080;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
