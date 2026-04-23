@@ -1,60 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  const [result, setResult] = useState<string>("");
+  const [message, setMessage] = useState("Loading...");
 
-  const testAPI = async () => {
-    try {
-      setResult("Loading... ⏳");
+  useEffect(() => {
+    const testAPI = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/test`
+        );
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+        if (!res.ok) throw new Error("Server error");
 
-      if (!API_URL) {
-        setResult("API URL nije definisan ❌");
-        return;
+        const data = await res.json();
+        setMessage(data.message);
+      } catch (err) {
+        setMessage("Greška sa API ❌");
       }
+    };
 
-      console.log("API URL:", API_URL);
-
-      const res = await fetch(`${API_URL}/api/test`, {
-        method: "GET",
-      });
-
-      if (!res.ok) {
-        throw new Error("Server error");
-      }
-
-      const data = await res.json();
-
-      setResult(data.msg || "Nema odgovora ❌");
-    } catch (error) {
-      console.error("FETCH ERROR:", error);
-      setResult("Greška sa API ❌");
-    }
-  };
+    testAPI();
+  }, []);
 
   return (
-    <main className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-black to-gray-900 text-white">
-      <h1 className="text-5xl font-bold mb-4">
-        NutriFlow 🚀
-      </h1>
+    <div style={{ padding: "40px" }}>
+      <h1>NutriFlow 🚀</h1>
+      <p>AI generiše personalizovan plan ishrane za tebe u sekundama.</p>
 
-      <p className="text-lg mb-6 text-center max-w-xl">
-        AI generiše personalizovan plan ishrane za tebe u sekundama.
+      {/* 🔥 LOGIN BUTTON */}
+      <Link href="/login">
+        <button
+          style={{
+            marginTop: "20px",
+            padding: "12px 24px",
+            background: "black",
+            color: "white",
+            borderRadius: "10px",
+            cursor: "pointer"
+          }}
+        >
+          Login
+        </button>
+      </Link>
+
+      <h2 style={{ marginTop: "30px" }}>Test Backend</h2>
+
+      <p style={{ fontSize: "18px", fontWeight: "bold" }}>
+        {message === "Loading..." ? "Učitavanje..." : message}
       </p>
-
-      <button
-        onClick={testAPI}
-        className="bg-green-500 px-8 py-4 rounded-2xl text-black font-bold hover:scale-110 transition"
-      >
-        Test Backend
-      </button>
-
-      <p className="mt-8 text-xl text-center max-w-xl">
-        {result}
-      </p>
-    </main>
+    </div>
   );
 }

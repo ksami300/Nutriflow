@@ -1,13 +1,11 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+const OpenAI = require("openai");
 
 const app = express();
 
-// ✅ CORS (production kasnije zaključavamo)
-app.use(cors({
-  origin: "*"
-}));
+// ✅ CORS (jedan, čist)
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST"],
@@ -18,6 +16,13 @@ app.use(cors({
 app.use(express.json());
 
 // =======================
+// OPENAI
+// =======================
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// =======================
 // ROUTES
 // =======================
 
@@ -26,19 +31,19 @@ app.get("/", (req, res) => {
   res.send("NutriFlow API working 🚀");
 });
 
-// ✅ HEALTHCHECK (OBAVEZNO ZA RAILWAY)
+// HEALTHCHECK (Railway koristi ovo)
 app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
 
-// ✅ TEST API
+// TEST API
 app.get("/api/test", (req, res) => {
   res.status(200).json({
     message: "API works 🚀"
   });
 });
 
-// ✅ LOGIN (test verzija)
+// LOGIN (demo)
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -54,9 +59,54 @@ app.post("/api/auth/login", (req, res) => {
 });
 
 // =======================
+// 🔥 AI GENERATE PLAN
+// =======================
+app.post("/api/generate-plan", async (req, res) => {
+  try {
+    const { goal, weight, height, activity } = req.body;
+
+    const prompt = `
+Create a personalized daily nutrition plan.
+
+User:
+- Goal: ${goal}
+- Weight: ${weight}kg
+- Height: ${height}cm
+- Activity level: ${activity}
+
+Return:
+- Breakfast
+- Lunch
+- Dinner
+- Calories
+- Water intake
+
+Keep it clean and structured.
+`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You are a professional nutritionist." },
+        { role: "user", content: prompt },
+      ],
+    });
+
+    const result = completion.choices[0].message.content;
+
+    res.status(200).json({ plan: result });
+
+  } catch (error) {
+    console.error("AI ERROR:", error);
+    res.status(500).json({
+      message: "AI error"
+    });
+  }
+});
+
+// =======================
 // START SERVER
 // =======================
-
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, "0.0.0.0", () => {

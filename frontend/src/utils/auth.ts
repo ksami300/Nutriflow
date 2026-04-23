@@ -6,7 +6,10 @@ export const getToken = () => {
   return localStorage.getItem("token");
 };
 
-export const logout = () => {
+export const removeToken = () => {
   localStorage.removeItem("token");
-  window.location.href = "/login";
+};
+
+export const isAuthenticated = () => {
+  return !!getToken();
 };

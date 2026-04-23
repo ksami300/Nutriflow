@@ -70,8 +70,10 @@ export default function LoginPage() {
       if (!data.token) throw new Error("Token was not returned");
 
       setToken(data.token);
-      toast.success("Welcome back! 🎉");
-      router.replace("/dashboard");
+toast.success("Welcome back! 🎉");
+
+// 🔥 FIX
+    router.replace("/generate-plan");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed";
       toast.error(message);
