@@ -5,22 +5,32 @@ const OpenAI = require("openai");
 
 const app = express();
 
-// ✅ CORS (jedan, čist)
+// =======================
+// CORS
+// =======================
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"]
 }));
 
-// ✅ Middleware
+// =======================
+// MIDDLEWARE
+// =======================
 app.use(express.json());
 
 // =======================
-// OPENAI
+// OPENAI INIT (SAFE)
 // =======================
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openai = null;
+
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+} else {
+  console.warn("⚠️ OPENAI_API_KEY not set — AI disabled");
+}
 
 // =======================
 // ROUTES
@@ -31,7 +41,7 @@ app.get("/", (req, res) => {
   res.send("NutriFlow API working 🚀");
 });
 
-// HEALTHCHECK (Railway koristi ovo)
+// HEALTHCHECK (Railway)
 app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
@@ -59,29 +69,44 @@ app.post("/api/auth/login", (req, res) => {
 });
 
 // =======================
-// 🔥 AI GENERATE PLAN
+// 🔥 GENERATE PLAN ROUTE
 // =======================
 app.post("/api/generate-plan", async (req, res) => {
   try {
     const { goal, weight, height, activity } = req.body;
 
+    // fallback ako nema OpenAI
+    if (!openai) {
+      return res.status(200).json({
+        plan: `
+🎯 Goal: ${goal}
+
+🥗 Breakfast:
+- Oatmeal + banana + peanut butter
+
+🍗 Lunch:
+- Chicken + rice + vegetables
+
+🥚 Dinner:
+- Eggs + avocado + toast
+
+🔥 Calories: ~2000 kcal
+💧 Water: 2.5L
+        `
+      });
+    }
+
     const prompt = `
-Create a personalized daily nutrition plan.
+Create a clean nutrition plan.
 
 User:
-- Goal: ${goal}
-- Weight: ${weight}kg
-- Height: ${height}cm
-- Activity level: ${activity}
+Goal: ${goal}
+Weight: ${weight}kg
+Height: ${height}cm
+Activity: ${activity}
 
 Return:
-- Breakfast
-- Lunch
-- Dinner
-- Calories
-- Water intake
-
-Keep it clean and structured.
+Breakfast, Lunch, Dinner, Calories, Water
 `;
 
     const completion = await openai.chat.completions.create({
@@ -103,7 +128,43 @@ Keep it clean and structured.
     });
   }
 });
+// =======================
+// 🧠 SAVE PLAN (in-memory DB)
+// =======================
+let plansDB = [];
 
+app.post("/api/save-plan", (req, res) => {
+  try {
+    const { plan } = req.body;
+
+    if (!plan) {
+      return res.status(400).json({ message: "Plan is required" });
+    }
+
+    const newPlan = {
+      id: Date.now(),
+      plan,
+      createdAt: new Date(),
+    };
+
+    plansDB.push(newPlan);
+
+    res.status(200).json({
+      message: "Plan saved",
+      data: newPlan,
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: "Save failed" });
+  }
+});
+
+// =======================
+// 📜 GET HISTORY
+// =======================
+app.get("/api/plans", (req, res) => {
+  res.status(200).json(plansDB);
+});
 // =======================
 // START SERVER
 // =======================
