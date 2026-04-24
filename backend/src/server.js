@@ -2,35 +2,60 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const OpenAI = require("openai");
+const jwt = require("jsonwebtoken");
+const Stripe = require("stripe");
 
 const app = express();
 
 // =======================
-// CORS
+// CONFIG
 // =======================
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type"]
-}));
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // =======================
 // MIDDLEWARE
 // =======================
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json());
 
 // =======================
-// OPENAI INIT (SAFE)
+// FAKE DATABASE (kasnije Mongo)
 // =======================
-let openai = null;
+let users = [
+  {
+    id: 1,
+    email: "demo@example.com",
+    password: "password123",
+    isPremium: false,
+    usage: 0
+  }
+];
 
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-} else {
-  console.warn("⚠️ OPENAI_API_KEY not set — AI disabled");
-}
+// =======================
+// AUTH MIDDLEWARE
+// =======================
+const authMiddleware = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) return res.status(401).json({ message: "No token" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = users.find(u => u.id === decoded.id);
+    next();
+  } catch {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};
 
 // =======================
 // ROUTES
@@ -38,138 +63,134 @@ if (process.env.OPENAI_API_KEY) {
 
 // ROOT
 app.get("/", (req, res) => {
-  res.send("NutriFlow API working 🚀");
+  res.send("NutriFlow API 🚀");
 });
 
-// HEALTHCHECK (Railway)
+// HEALTH
 app.get("/health", (req, res) => {
-  res.status(200).send("OK");
+  res.send("OK");
 });
 
-// TEST API
-app.get("/api/test", (req, res) => {
-  res.status(200).json({
-    message: "API works 🚀"
-  });
+// REGISTER
+app.post("/api/auth/register", (req, res) => {
+  const { email, password } = req.body;
+
+  const user = {
+    id: Date.now(),
+    email,
+    password,
+    isPremium: false,
+    usage: 0
+  };
+
+  users.push(user);
+
+  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
+
+  res.json({ token });
 });
 
-// LOGIN (demo)
+// LOGIN
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
 
-  if (email === "demo@example.com" && password === "password123") {
-    return res.status(200).json({
-      token: "test-token-123"
-    });
+  const user = users.find(
+    u => u.email === email && u.password === password
+  );
+
+  if (!user) {
+    return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  return res.status(401).json({
-    message: "Invalid credentials"
-  });
+  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
+
+  res.json({ token });
 });
 
 // =======================
-// 🔥 GENERATE PLAN ROUTE
+// 🔥 GENERATE PLAN (WITH LIMIT)
 // =======================
-app.post("/api/generate-plan", async (req, res) => {
+app.post("/api/generate-plan", authMiddleware, async (req, res) => {
   try {
-    const { goal, weight, height, activity } = req.body;
+    const user = req.user;
 
-    // fallback ako nema OpenAI
-    if (!openai) {
-      return res.status(200).json({
-        plan: `
-🎯 Goal: ${goal}
-
-🥗 Breakfast:
-- Oatmeal + banana + peanut butter
-
-🍗 Lunch:
-- Chicken + rice + vegetables
-
-🥚 Dinner:
-- Eggs + avocado + toast
-
-🔥 Calories: ~2000 kcal
-💧 Water: 2.5L
-        `
+    // 🚫 FREE LIMIT
+    if (!user.isPremium && user.usage >= 1) {
+      return res.status(403).json({
+        message: "Free limit reached. Upgrade to premium."
       });
     }
 
+    const { goal, weight, height, activity } = req.body;
+
     const prompt = `
-Create a clean nutrition plan.
+Create a personalized daily nutrition plan.
 
-User:
 Goal: ${goal}
-Weight: ${weight}kg
-Height: ${height}cm
+Weight: ${weight}
+Height: ${height}
 Activity: ${activity}
-
-Return:
-Breakfast, Lunch, Dinner, Calories, Water
 `;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: "You are a professional nutritionist." },
+        { role: "system", content: "You are a nutrition expert." },
         { role: "user", content: prompt },
       ],
     });
 
-    const result = completion.choices[0].message.content;
+    const plan = completion.choices[0].message.content;
 
-    res.status(200).json({ plan: result });
+    user.usage += 1;
 
-  } catch (error) {
-    console.error("AI ERROR:", error);
-    res.status(500).json({
-      message: "AI error"
-    });
-  }
-});
-// =======================
-// 🧠 SAVE PLAN (in-memory DB)
-// =======================
-let plansDB = [];
-
-app.post("/api/save-plan", (req, res) => {
-  try {
-    const { plan } = req.body;
-
-    if (!plan) {
-      return res.status(400).json({ message: "Plan is required" });
-    }
-
-    const newPlan = {
-      id: Date.now(),
-      plan,
-      createdAt: new Date(),
-    };
-
-    plansDB.push(newPlan);
-
-    res.status(200).json({
-      message: "Plan saved",
-      data: newPlan,
-    });
+    res.json({ plan });
 
   } catch (err) {
-    res.status(500).json({ message: "Save failed" });
+    console.error(err);
+    res.status(500).json({ message: "Error generating plan" });
   }
 });
 
 // =======================
-// 📜 GET HISTORY
+// 💰 STRIPE
 // =======================
-app.get("/api/plans", (req, res) => {
-  res.status(200).json(plansDB);
+app.post("/api/create-checkout-session", authMiddleware, async (req, res) => {
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    mode: "payment",
+    line_items: [
+      {
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: "NutriFlow Premium",
+          },
+          unit_amount: 500,
+        },
+        quantity: 1,
+      },
+    ],
+    success_url: `${process.env.CLIENT_URL}/success`,
+    cancel_url: `${process.env.CLIENT_URL}/cancel`,
+  });
+
+  res.json({ url: session.url });
 });
+
 // =======================
-// START SERVER
+// 🔥 SIMULACIJA PREMIUM (ZA TEST)
+// =======================
+app.post("/api/upgrade", authMiddleware, (req, res) => {
+  req.user.isPremium = true;
+  res.json({ message: "Upgraded!" });
+});
+
+// =======================
+// START
 // =======================
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log("🚀 Server running on " + PORT);
 });

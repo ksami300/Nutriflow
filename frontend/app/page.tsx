@@ -5,7 +5,9 @@ import { useEffect, useState } from "react";
 
 export default function Home() {
   const [message, setMessage] = useState("Loading...");
+  const [loading, setLoading] = useState(true);
 
+  // ✅ TEST API
   useEffect(() => {
     const testAPI = async () => {
       try {
@@ -18,39 +20,91 @@ export default function Home() {
         const data = await res.json();
         setMessage(data.message);
       } catch (err) {
-        setMessage("Greška sa API ❌");
+        setMessage("API error ❌");
+      } finally {
+        setLoading(false);
       }
     };
 
     testAPI();
   }, []);
 
+  // ✅ STRIPE UPGRADE (ISPRAVNO MESTO)
+  const handleUpgrade = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/create-checkout-session`,
+        {
+          method: "POST",
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      alert("Payment error ❌");
+    }
+  };
+
   return (
-    <div style={{ padding: "40px" }}>
-      <h1>NutriFlow 🚀</h1>
-      <p>AI generiše personalizovan plan ishrane za tebe u sekundama.</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-200 p-6">
 
-      {/* 🔥 LOGIN BUTTON */}
-      <Link href="/login">
-        <button
-          style={{
-            marginTop: "20px",
-            padding: "12px 24px",
-            background: "black",
-            color: "white",
-            borderRadius: "10px",
-            cursor: "pointer"
-          }}
-        >
-          Login
-        </button>
-      </Link>
+      {/* HERO */}
+      <div className="text-center max-w-xl">
+        <h1 className="text-5xl font-bold mb-4">
+          NutriFlow 🚀
+        </h1>
 
-      <h2 style={{ marginTop: "30px" }}>Test Backend</h2>
+        <p className="text-lg text-gray-600 mb-6">
+          AI generiše personalizovan plan ishrane za tebe u sekundama.
+        </p>
 
-      <p style={{ fontSize: "18px", fontWeight: "bold" }}>
-        {message === "Loading..." ? "Učitavanje..." : message}
-      </p>
+        {/* CTA */}
+        <div className="flex flex-wrap gap-3 justify-center">
+
+          <Link href="/login">
+            <button className="px-6 py-3 bg-black text-white rounded-xl hover:opacity-90 transition">
+              Login
+            </button>
+          </Link>
+
+          <Link href="/generate-plan">
+            <button className="px-6 py-3 bg-green-600 text-white rounded-xl hover:opacity-90 transition">
+              Generate Plan
+            </button>
+          </Link>
+
+          <Link href="/history">
+            <button className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:opacity-90 transition">
+              History
+            </button>
+          </Link>
+
+          {/* 🔥 PREMIUM BUTTON */}
+          <button
+            onClick={handleUpgrade}
+            className="px-6 py-3 bg-yellow-500 text-black rounded-xl hover:opacity-90 transition"
+          >
+            Upgrade 🚀
+          </button>
+
+        </div>
+      </div>
+
+      {/* STATUS */}
+      <div className="mt-10 text-center">
+        <h2 className="text-xl font-semibold mb-2">
+          Backend status
+        </h2>
+
+        <p className="text-lg font-bold">
+          {loading ? "Učitavanje..." : message}
+        </p>
+      </div>
+
     </div>
   );
 }
