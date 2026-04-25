@@ -8,22 +8,28 @@ dotenv.config();
 
 const app = express();
 
-// =======================
-// CONFIG
-// =======================
-app.use(cors());
+// ✅ CORS
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
+
 app.use(express.json());
 
-const users = {};
-
-// OpenAI
+// =======================
+// OPENAI
+// =======================
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
+// =======================
+// STRIPE (OVO JE BITNO)
+// =======================
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY)
+  : null;
 // =======================
 // ROUTES
 // =======================
@@ -40,6 +46,7 @@ app.get("/api/test", (req, res) => {
   res.json({ message: "API works 🚀" });
 });
 
+app.post("/api/create-checkout-session", ...)
 // =======================
 // GENERATE PLAN (LIMIT)
 // =======================
@@ -106,9 +113,17 @@ Activity: ${activity}
 // =======================
 app.post("/api/create-checkout-session", async (req, res) => {
   try {
+    // 🔒 PROVERA
+    if (!stripe) {
+      return res.status(500).json({
+        message: "Stripe not configured",
+      });
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
+
       line_items: [
         {
           price_data: {
@@ -121,14 +136,19 @@ app.post("/api/create-checkout-session", async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: "http://localhost:3000/success",
-      cancel_url: "http://localhost:3000/cancel",
+
+      // ⚠️ BITNO — stavi svoj frontend URL kad deployuješ
+      success_url: "https://tvoj-frontend-url.railway.app/success",
+      cancel_url: "https://tvoj-frontend-url.railway.app/cancel",
     });
 
-    res.json({ url: session.url });
+    res.status(200).json({ url: session.url });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Stripe error" });
+    console.error("STRIPE ERROR:", err);
+    res.status(500).json({
+      message: "Stripe error",
+    });
   }
 });
 
