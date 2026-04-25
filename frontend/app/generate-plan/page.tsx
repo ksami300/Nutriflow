@@ -1,6 +1,8 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const STORAGE_KEY = "nutriflow_history";
 
 export default function GeneratePlanPage() {
   const [form, setForm] = useState({
@@ -12,70 +14,86 @@ export default function GeneratePlanPage() {
 
   const [plan, setPlan] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const API = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  // USER ID
+  const [userId, setUserId] = useState("");
+
+  useEffect(() => {
+    let id = localStorage.getItem("userId");
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem("userId", id);
+    }
+    setUserId(id);
+  }, []);
 
   const generatePlan = async () => {
     setLoading(true);
+    setError("");
+    setPlan("");
 
-    const res = await fetch(`${API}/api/generate-plan`, {
+    try {
+      const res = await fetch(`${apiUrl}/api/generate-plan`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": userId,
+        },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Error");
+      }
+
+      setPlan(data.plan);
+
+      // SAVE HISTORY
+      const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      const updated = [{ ...form, plan: data.plan }, ...existing];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpgrade = async () => {
+    const res = await fetch(`${apiUrl}/api/create-checkout-session`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
     });
 
     const data = await res.json();
-    setPlan(data.plan);
-    setLoading(false);
-  };
 
-  const savePlan = async () => {
-    await fetch(`${API}/api/save-plan`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ plan }),
-    });
-
-    alert("✅ Plan saved!");
+    if (data.url) {
+      window.location.href = data.url;
+    }
   };
 
   return (
-    <div className="p-6 max-w-xl mx-auto space-y-4">
-
-      <h1 className="text-3xl font-bold">🧠 Generate Plan</h1>
-
-      <select onChange={(e) => setForm({ ...form, goal: e.target.value })}>
-        <option value="gain">Gain</option>
-        <option value="lose">Lose</option>
-      </select>
+    <div style={{ padding: "40px" }}>
+      <h1>Generate Plan</h1>
 
       <input placeholder="Weight" onChange={(e) => setForm({ ...form, weight: e.target.value })} />
       <input placeholder="Height" onChange={(e) => setForm({ ...form, height: e.target.value })} />
 
-      <select onChange={(e) => setForm({ ...form, activity: e.target.value })}>
-        <option value="low">Low</option>
-        <option value="moderate">Moderate</option>
-        <option value="high">High</option>
-      </select>
-
       <button onClick={generatePlan}>
-        {loading ? "Generating..." : "Generate 🚀"}
+        {loading ? "Loading..." : "Generate"}
       </button>
 
-      {plan && (
-        <div className="bg-white p-4 rounded shadow">
-          <pre>{plan}</pre>
+      <button onClick={handleUpgrade} style={{ marginLeft: "10px" }}>
+        Upgrade 💳
+      </button>
 
-          <button onClick={savePlan} className="mt-4 bg-green-500 text-white px-4 py-2">
-            Save Plan 💾
-          </button>
-        </div>
-      )}
-
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {plan && <pre>{plan}</pre>}
     </div>
   );
 }
