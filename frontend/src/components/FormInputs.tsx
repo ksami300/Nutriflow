@@ -27,6 +27,10 @@ export function Input({
   className = "",
   ...props
 }: InputProps) {
+  const derivedInputMode =
+    props.inputMode ||
+    (props.type === "email" ? "email" : props.type === "tel" ? "tel" : "text");
+
   return (
     <div className="space-y-2 animate-slideUp">
       {label && (
@@ -38,9 +42,13 @@ export function Input({
       <div className="relative group">
         {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{icon}</div>}
         <input
+          autoComplete={props.autoComplete ?? "off"}
+          autoCapitalize={props.autoCapitalize ?? "none"}
+          spellCheck={props.spellCheck ?? false}
+          inputMode={derivedInputMode}
           {...props}
           className={`
-            w-full px-4 py-3 rounded-3xl border border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500
+            w-full px-4 py-4 min-h-[44px] rounded-3xl border border-slate-700 bg-slate-950 text-slate-100 text-base placeholder:text-slate-400
             transition-all duration-200
             focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500
             hover:border-slate-600

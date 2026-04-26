@@ -91,6 +91,7 @@ export default function RegisterPage() {
     try {
       const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -107,7 +108,7 @@ export default function RegisterPage() {
 
       setToken(data.token);
       toast.success("Welcome to NutriFlow! 🎉");
-      router.replace("/dashboard");
+      router.replace("/generate-plan");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Registration failed";
       toast.error(message);
@@ -119,9 +120,9 @@ export default function RegisterPage() {
   const strengthLabel = getPasswordStrengthLabel();
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100">
-      <div className="mx-auto max-w-md">
-        <Card variant="elevated" padded className="border-slate-800 bg-slate-900/95">
+    <div className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 overflow-x-hidden">
+      <div className="mx-auto max-w-md px-2">
+        <Card variant="elevated" padded className="border border-slate-700 bg-slate-800/95 shadow-lg">
           <CardBody className="space-y-6">
             <div className="text-center space-y-3 pb-2 border-b border-slate-800">
               <div className="inline-flex items-center justify-center rounded-full bg-violet-500/10 px-4 py-1 text-sm text-violet-200">
@@ -137,6 +138,10 @@ export default function RegisterPage() {
               <Input
                 label="Full Name"
                 type="text"
+                inputMode="text"
+                autoComplete="name"
+                autoCapitalize="words"
+                spellCheck={false}
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
@@ -151,6 +156,10 @@ export default function RegisterPage() {
               <Input
                 label="Email Address"
                 type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -165,6 +174,10 @@ export default function RegisterPage() {
               <Input
                 label="Password"
                 type="password"
+                inputMode="text"
+                autoComplete="new-password"
+                autoCapitalize="none"
+                spellCheck={false}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -190,6 +203,10 @@ export default function RegisterPage() {
               <Input
                 label="Confirm Password"
                 type="password"
+                inputMode="text"
+                autoComplete="new-password"
+                autoCapitalize="none"
+                spellCheck={false}
                 value={confirmPassword}
                 onChange={(e) => {
                   setConfirmPassword(e.target.value);

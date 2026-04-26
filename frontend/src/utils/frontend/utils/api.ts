@@ -6,7 +6,12 @@ if (!API_URL) {
 
 export const api = {
   get: async (path: string) => {
-    const res = await fetch(`${API_URL}${path}`);
+    const res = await fetch(`${API_URL}${path}`, {
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     if (!res.ok) throw new Error("Request failed");
     return res.json();
   },
@@ -14,6 +19,7 @@ export const api = {
   post: async (path: string, body: any) => {
     const res = await fetch(`${API_URL}${path}`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },

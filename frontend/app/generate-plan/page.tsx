@@ -59,6 +59,8 @@ export default function GeneratePlanPage() {
   const fetchUserStatus = async (id: string) => {
     try {
       const res = await fetch(`${apiUrl}/api/user-status`, {
+        method: "GET",
+        credentials: "include",
         headers: { "x-user-id": id },
       });
       if (res.ok) {
@@ -109,6 +111,7 @@ export default function GeneratePlanPage() {
     try {
       const res = await fetch(`${apiUrl}/api/generate-plan`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "x-user-id": userId,
@@ -154,6 +157,7 @@ export default function GeneratePlanPage() {
     try {
       const res = await fetch(`${apiUrl}/api/create-checkout-session`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "x-user-id": userId,
@@ -182,8 +186,8 @@ export default function GeneratePlanPage() {
   const planSections = useMemo(() => parsePlanSections(plan), [plan]);
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100">
-      <div className="mx-auto max-w-md space-y-6">
+    <div className="min-h-screen bg-slate-950 px-4 py-6 text-slate-100 overflow-x-hidden">
+      <div className="mx-auto max-w-md px-2 space-y-6">
         <section className="rounded-[32px] border border-slate-800 bg-slate-900/95 p-6 shadow-[0_35px_90px_-40px_rgba(15,23,42,0.75)]">
           <div className="mb-6 space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-200">
@@ -199,7 +203,8 @@ export default function GeneratePlanPage() {
             <div>
               <label className="text-sm font-semibold text-slate-200">Goal</label>
               <select
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-800 px-4 py-4 text-base text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                autoComplete="off"
                 value={form.goal}
                 onChange={(e) => setForm({ ...form, goal: e.target.value })}
               >
@@ -213,8 +218,12 @@ export default function GeneratePlanPage() {
               <div>
                 <label className="text-sm font-semibold text-slate-200">Weight (kg)</label>
                 <input
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-800 px-4 py-4 text-base text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   type="number"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   placeholder="75"
                   value={form.weight}
                   onChange={(e) => setForm({ ...form, weight: e.target.value })}
@@ -223,8 +232,12 @@ export default function GeneratePlanPage() {
               <div>
                 <label className="text-sm font-semibold text-slate-200">Height (cm)</label>
                 <input
-                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-800 px-4 py-4 text-base text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   type="number"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   placeholder="180"
                   value={form.height}
                   onChange={(e) => setForm({ ...form, height: e.target.value })}
@@ -235,7 +248,8 @@ export default function GeneratePlanPage() {
             <div>
               <label className="text-sm font-semibold text-slate-200">Activity level</label>
               <select
-                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-800 px-4 py-4 text-base text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                autoComplete="off"
                 value={form.activity}
                 onChange={(e) => setForm({ ...form, activity: e.target.value })}
               >

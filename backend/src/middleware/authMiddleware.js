@@ -3,12 +3,21 @@ const jwt = require("jsonwebtoken");
 module.exports = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
+    const cookieHeader = req.headers.cookie;
 
-    if (!authHeader) {
-      return res.status(401).json({ message: "No token" });
+    let token = authHeader ? authHeader.split(" ")[1] : null;
+
+    if (!token && cookieHeader) {
+      token = cookieHeader
+        .split(";")
+        .map((cookie) => cookie.trim())
+        .find((cookie) => cookie.startsWith("token="))
+        ?.split("=")[1] || null;
     }
 
-    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No token" });
+    }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 

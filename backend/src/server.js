@@ -20,13 +20,15 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 
 // CORS Configuration
 const corsOptions = {
-  origin: FRONTEND_URL === "*" ? "*" : [FRONTEND_URL, "http://localhost:3000"],
+  origin: FRONTEND_URL,
   methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "x-user-id"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-user-id", "Cookie"],
   credentials: true,
+  optionsSuccessStatus: 200,
 };
 
 // Middleware
+app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
 app.use(express.json());
 
