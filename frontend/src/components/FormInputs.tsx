@@ -30,28 +30,28 @@ export function Input({
   return (
     <div className="space-y-2 animate-slideUp">
       {label && (
-        <label className="block text-sm font-semibold text-neutral-700">
+        <label className="block text-sm font-semibold text-slate-200">
           {label}
-          {required && <span className="text-error ml-1">*</span>}
+          {required && <span className="text-rose-400 ml-1">*</span>}
         </label>
       )}
       <div className="relative group">
-        {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">{icon}</div>}
+        {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{icon}</div>}
         <input
           {...props}
           className={`
-            w-full px-4 py-3 rounded-lg border-2 border-neutral-200
+            w-full px-4 py-3 rounded-3xl border border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500
             transition-all duration-200
-            focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
-            hover:border-neutral-300
-            ${icon ? "pl-10" : ""}
-            ${error ? "border-error focus:border-error focus:ring-error/20" : ""}
+            focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500
+            hover:border-slate-600
+            ${icon ? "pl-12" : ""}
+            ${error ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : ""}
             ${className}
           `}
         />
       </div>
-      {error && <p className="text-sm text-error font-medium animate-slideUp">{error}</p>}
-      {hint && !error && <p className="text-sm text-neutral-500">{hint}</p>}
+      {error && <p className="text-sm text-rose-400 font-medium animate-slideUp">{error}</p>}
+      {hint && !error && <p className="text-sm text-slate-400">{hint}</p>}
     </div>
   );
 }
@@ -60,31 +60,30 @@ export function Select({ label, error, options, hint, required, className = "", 
   return (
     <div className="space-y-2 animate-slideUp">
       {label && (
-        <label className="block text-sm font-semibold text-neutral-700">
+        <label className="block text-sm font-semibold text-slate-200">
           {label}
-          {required && <span className="text-error ml-1">*</span>}
+          {required && <span className="text-rose-400 ml-1">*</span>}
         </label>
       )}
       <select
         {...props}
         className={`
-          w-full px-4 py-3 rounded-lg border-2 border-neutral-200
+          w-full px-4 py-3 rounded-3xl border border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500
           transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
-          hover:border-neutral-300
-          bg-white
-          ${error ? "border-error focus:border-error focus:ring-error/20" : ""}
+          focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500
+          hover:border-slate-600
+          ${error ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : ""}
           ${className}
         `}
       >
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
+          <option key={opt.value} value={opt.value} className="text-slate-900">
             {opt.label}
           </option>
         ))}
       </select>
-      {error && <p className="text-sm text-error font-medium animate-slideUp">{error}</p>}
-      {hint && !error && <p className="text-sm text-neutral-500">{hint}</p>}
+      {error && <p className="text-sm text-rose-400 font-medium animate-slideUp">{error}</p>}
+      {hint && !error && <p className="text-sm text-slate-400">{hint}</p>}
     </div>
   );
 }
@@ -105,25 +104,25 @@ export function Textarea({
   return (
     <div className="space-y-2 animate-slideUp">
       {label && (
-        <label className="block text-sm font-semibold text-neutral-700">
+        <label className="block text-sm font-semibold text-slate-200">
           {label}
-          {required && <span className="text-error ml-1">*</span>}
+          {required && <span className="text-rose-400 ml-1">*</span>}
         </label>
       )}
       <textarea
         {...props}
         className={`
-          w-full px-4 py-3 rounded-lg border-2 border-neutral-200
+          w-full px-4 py-3 rounded-3xl border border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500
           transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
-          hover:border-neutral-300
+          focus:outline-none focus:ring-2 focus:ring-blue-500/25 focus:border-blue-500
+          hover:border-slate-600
           resize-none
-          ${error ? "border-error focus:border-error focus:ring-error/20" : ""}
+          ${error ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20" : ""}
           ${className}
         `}
       />
-      {error && <p className="text-sm text-error font-medium animate-slideUp">{error}</p>}
-      {hint && !error && <p className="text-sm text-neutral-500">{hint}</p>}
+      {error && <p className="text-sm text-rose-400 font-medium animate-slideUp">{error}</p>}
+      {hint && !error && <p className="text-sm text-slate-400">{hint}</p>}
     </div>
   );
 }

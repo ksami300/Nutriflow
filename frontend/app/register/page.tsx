@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -7,7 +7,7 @@ import { setToken } from "@/utils/auth";
 import toast from "react-hot-toast";
 import { Input } from "@/components/FormInputs";
 import { Button } from "@/components/Button";
-import { Card, CardBody, Alert } from "@/components/Card";
+import { Card, CardBody } from "@/components/Card";
 import { Progress, Badge } from "@/components/UI";
 
 export default function RegisterPage() {
@@ -19,10 +19,8 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string }>({});
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const router = useRouter();
-
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // Calculate password strength
   const passwordStrength = useMemo(() => {
     let strength = 0;
     if (password.length >= 8) strength += 25;
@@ -121,21 +119,21 @@ export default function RegisterPage() {
   const strengthLabel = getPasswordStrengthLabel();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-primary-50 to-accent-light/20 p-4">
-      <div className="w-full max-w-md animate-slideUp">
-        <Card variant="elevated" padded>
+    <div className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100">
+      <div className="mx-auto max-w-md">
+        <Card variant="elevated" padded className="border-slate-800 bg-slate-900/95">
           <CardBody className="space-y-6">
-            {/* Header */}
-            <div className="text-center space-y-2 mb-4">
-              <div className="text-4xl mb-2">💪</div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-accent-light bg-clip-text text-transparent">
-                NutriFlow
-              </h1>
-              <p className="text-neutral-600 text-sm">Start your transformation today</p>
+            <div className="text-center space-y-3 pb-2 border-b border-slate-800">
+              <div className="inline-flex items-center justify-center rounded-full bg-violet-500/10 px-4 py-1 text-sm text-violet-200">
+                Premium sign up
+              </div>
+              <div>
+                <p className="text-3xl font-semibold text-white">Create your account</p>
+                <p className="mt-2 text-sm text-slate-400">A clean, secure onboarding flow built for mobile.</p>
+              </div>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleRegister} className="space-y-4">
+            <form onSubmit={handleRegister} className="space-y-5">
               <Input
                 label="Full Name"
                 type="text"
@@ -164,34 +162,30 @@ export default function RegisterPage() {
                 icon="📧"
               />
 
-              <div className="space-y-3">
-                <Input
-                  label="Password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (errors.password) setErrors({ ...errors, password: "" });
-                  }}
-                  placeholder="••••••••"
-                  error={errors.password}
-                  required
-                  icon="🔒"
-                />
+              <Input
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors({ ...errors, password: "" });
+                }}
+                placeholder="••••••••"
+                error={errors.password}
+                required
+                icon="🔒"
+              />
 
-                {password && (
-                  <div className="space-y-2 px-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-neutral-600">Password Strength</span>
-                      <Badge label={strengthLabel.label} variant={strengthLabel.color} size="sm" />
-                    </div>
-                    <Progress value={strengthLabel.value} label={undefined} showValue={false} />
-                    <p className="text-xs text-neutral-500">
-                      💡 Mix uppercase, lowercase, numbers & symbols for a stronger password
-                    </p>
+              {password && (
+                <div className="space-y-3 rounded-3xl border border-slate-800 bg-slate-950 p-4">
+                  <div className="flex items-center justify-between text-sm text-slate-300">
+                    <span>Password Strength</span>
+                    <Badge label={strengthLabel.label} variant={strengthLabel.color} size="sm" />
                   </div>
-                )}
-              </div>
+                  <Progress value={strengthLabel.value} showValue={false} />
+                  <p className="text-xs text-slate-500">Mix uppercase, lowercase, numbers & symbols for a stronger password.</p>
+                </div>
+              )}
 
               <Input
                 label="Confirm Password"
@@ -207,66 +201,32 @@ export default function RegisterPage() {
                 icon="✓"
               />
 
-              <div className="flex items-start gap-3 py-2">
+              <div className="flex items-start gap-3 text-sm text-slate-300">
                 <input
                   type="checkbox"
                   id="terms"
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-1 w-4 h-4 rounded border-neutral-300 accent-primary-600 cursor-pointer"
+                  className="mt-1 h-4 w-4 rounded border-slate-700 bg-slate-950 text-blue-500 accent-blue-500"
                 />
-                <label htmlFor="terms" className="text-sm text-neutral-600 cursor-pointer">
-                  I agree to the{" "}
-                  <Link href="#" className="text-primary-600 font-medium hover:underline">
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link href="#" className="text-primary-600 font-medium hover:underline">
-                    Privacy Policy
-                  </Link>
+                <label htmlFor="terms" className="leading-5">
+                  I agree to the <Link href="#" className="text-blue-300 hover:text-blue-200">Terms of Service</Link> and <Link href="#" className="text-blue-300 hover:text-blue-200">Privacy Policy</Link>.
                 </label>
               </div>
 
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                fullWidth
-                isLoading={loading}
-                className="mt-6"
-              >
+              <Button type="submit" variant="primary" size="lg" fullWidth isLoading={loading}>
                 {loading ? "Creating account..." : "Create Account"}
               </Button>
             </form>
 
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-neutral-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-neutral-500">Already a member?</span>
-              </div>
+            <div className="text-center text-sm text-slate-500">
+              Already signed up?
+              <Link href="/login" className="ml-1 text-blue-400 hover:text-blue-300 font-semibold">
+                Sign in
+              </Link>
             </div>
-
-            {/* Sign In Link */}
-            <Link href="/login">
-              <Button
-                variant="outline"
-                size="md"
-                fullWidth
-                type="button"
-              >
-                Sign In
-              </Button>
-            </Link>
           </CardBody>
         </Card>
-
-        {/* Footer */}
-        <p className="text-center text-xs text-neutral-600 mt-6">
-          Free account • No credit card required • Start today
-        </p>
       </div>
     </div>
   );

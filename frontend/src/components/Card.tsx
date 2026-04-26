@@ -17,19 +17,19 @@ export function Card({
   ...props
 }: CardProps) {
   const variantClasses = {
-    default: "bg-white border border-neutral-200",
-    elevated: "bg-white shadow-lg",
-    outline: "bg-transparent border-2 border-neutral-200",
-    gradient: "bg-gradient-to-br from-white to-neutral-50 shadow-md",
+    default: "bg-slate-900 border border-slate-800 text-slate-100",
+    elevated: "bg-slate-900 border border-slate-800 shadow-2xl text-slate-100",
+    outline: "bg-slate-950 border-2 border-slate-700 text-slate-100",
+    gradient: "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 shadow-xl text-slate-100",
   };
 
   return (
     <div
       className={`
-        rounded-xl transition-all duration-300
+        rounded-3xl transition-all duration-300
         ${variantClasses[variant]}
         ${padded ? "p-6" : ""}
-        ${hoverable ? "hover:shadow-xl hover:-translate-y-1 cursor-pointer" : ""}
+        ${hoverable ? "hover:shadow-[0_20px_70px_-30px_rgba(59,130,246,0.6)] hover:-translate-y-1 cursor-pointer" : ""}
         ${className}
       `}
       {...props}
@@ -41,7 +41,7 @@ export function Card({
 
 export function CardHeader({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`flex items-center justify-between mb-4 pb-4 border-b border-neutral-100 ${className}`}>
+    <div className={`flex items-center justify-between mb-4 pb-4 border-b border-slate-800 ${className}`}>
       {children}
     </div>
   );
@@ -53,18 +53,18 @@ export function CardBody({ children, className = "" }: { children: React.ReactNo
 
 export function CardFooter({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`flex items-center justify-between pt-4 border-t border-neutral-100 mt-4 ${className}`}>
+    <div className={`flex items-center justify-between pt-4 border-t border-slate-800 mt-4 ${className}`}>
       {children}
     </div>
   );
 }
 
 export function CardTitle({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <h3 className={`text-xl font-bold text-neutral-900 ${className}`}>{children}</h3>;
+  return <h3 className={`text-xl font-bold text-slate-100 ${className}`}>{children}</h3>;
 }
 
 export function CardDescription({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <p className={`text-sm text-neutral-600 ${className}`}>{children}</p>;
+  return <p className={`text-sm text-slate-400 ${className}`}>{children}</p>;
 }
 
 export function EmptyState({
@@ -82,9 +82,9 @@ export function EmptyState({
 }) {
   return (
     <Card variant="outline" padded className={`text-center py-16 ${className}`}>
-      {icon && <div className="text-6xl mb-4 text-neutral-300">{icon}</div>}
-      <h3 className="text-xl font-semibold text-neutral-900 mb-2">{title}</h3>
-      {description && <p className="text-neutral-600 mb-6">{description}</p>}
+      {icon && <div className="text-6xl mb-4 text-slate-400">{icon}</div>}
+      <h3 className="text-xl font-semibold text-slate-100 mb-2">{title}</h3>
+      {description && <p className="text-slate-400 mb-6">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </Card>
   );
@@ -104,10 +104,10 @@ export function Alert({
   onClose?: () => void;
 }) {
   const typeClasses = {
-    info: "bg-blue-50 border border-blue-200 text-blue-900",
-    success: "bg-green-50 border border-green-200 text-green-900",
-    warning: "bg-yellow-50 border border-yellow-200 text-yellow-900",
-    error: "bg-red-50 border border-red-200 text-red-900",
+    info: "bg-slate-900 border border-slate-700 text-slate-100",
+    success: "bg-slate-950 border border-emerald-700 text-emerald-300",
+    warning: "bg-slate-950 border border-amber-600 text-amber-200",
+    error: "bg-slate-950 border border-rose-600 text-rose-200",
   };
 
   const icons = {
@@ -118,18 +118,18 @@ export function Alert({
   };
 
   return (
-    <div className={`rounded-lg p-4 border-l-4 animate-slideDown ${typeClasses[type]}`}>
-      <div className="flex items-start justify-between">
+    <div className={`rounded-2xl p-4 border-l-4 animate-slideDown ${typeClasses[type]}`}>
+      <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <span className="text-xl">{icons[type]}</span>
           <div>
-            <h4 className="font-semibold">{title}</h4>
-            {description && <p className="text-sm opacity-75 mt-1">{description}</p>}
-            {action && <div className="mt-2">{action}</div>}
+            <h4 className="font-semibold text-slate-100">{title}</h4>
+            {description && <p className="text-sm opacity-80 mt-1 text-slate-300">{description}</p>}
+            {action && <div className="mt-3">{action}</div>}
           </div>
         </div>
         {onClose && (
-          <button onClick={onClose} className="text-current opacity-50 hover:opacity-100 transition">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 transition">
             ✕
           </button>
         )}

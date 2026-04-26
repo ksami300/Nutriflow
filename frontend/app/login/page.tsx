@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,7 +7,7 @@ import { setToken } from "@/utils/auth";
 import toast from "react-hot-toast";
 import { Input } from "@/components/FormInputs";
 import { Button } from "@/components/Button";
-import { Card, CardBody, Alert } from "@/components/Card";
+import { Card, CardBody } from "@/components/Card";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,7 +15,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const router = useRouter();
-
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const validateForm = (): boolean => {
@@ -70,10 +69,8 @@ export default function LoginPage() {
       if (!data.token) throw new Error("Token was not returned");
 
       setToken(data.token);
-toast.success("Welcome back! 🎉");
-
-// 🔥 FIX
-    router.replace("/generate-plan");
+      toast.success("Welcome back! 🎉");
+      router.replace("/generate-plan");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed";
       toast.error(message);
@@ -83,21 +80,21 @@ toast.success("Welcome back! 🎉");
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-primary-50 to-accent-light/20 p-4">
-      <div className="w-full max-w-md animate-slideUp">
-        <Card variant="elevated" padded>
+    <div className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100">
+      <div className="mx-auto max-w-md">
+        <Card variant="elevated" padded className="border-slate-800 bg-slate-900/95">
           <CardBody className="space-y-6">
-            {/* Header */}
-            <div className="text-center space-y-2 mb-4">
-              <div className="text-4xl mb-2">🎯</div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-accent-light bg-clip-text text-transparent">
-                NutriFlow
-              </h1>
-              <p className="text-neutral-600 text-sm">Welcome back to your nutrition journey</p>
+            <div className="text-center space-y-3 pb-2 border-b border-slate-800">
+              <div className="inline-flex items-center justify-center rounded-full bg-blue-500/10 px-4 py-1 text-sm text-blue-200">
+                First class nutrition
+              </div>
+              <div>
+                <p className="text-3xl font-semibold text-white">Welcome back</p>
+                <p className="mt-2 text-sm text-slate-400">Sign in to generate your premium AI meal plan.</p>
+              </div>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-5">
               <Input
                 label="Email Address"
                 type="email"
@@ -124,59 +121,21 @@ toast.success("Welcome back! 🎉");
                 error={errors.password}
                 required
                 icon="🔒"
-                hint="Must be at least 6 characters"
               />
 
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                fullWidth
-                isLoading={loading}
-                className="mt-6"
-              >
+              <Button type="submit" variant="primary" size="lg" fullWidth isLoading={loading}>
                 {loading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
 
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-neutral-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-neutral-500">New to NutriFlow?</span>
-              </div>
+            <div className="text-center text-sm text-slate-500">
+              Don’t have an account?
+              <Link href="/register" className="ml-1 text-blue-400 hover:text-blue-300 font-semibold">
+                Create one
+              </Link>
             </div>
-
-            {/* Register Link */}
-            <Link href="/register">
-              <Button
-                variant="outline"
-                size="md"
-                fullWidth
-                type="button"
-              >
-                Create Account
-              </Button>
-            </Link>
-
-            {/* Test Credentials */}
-            <Alert
-              type="info"
-              title="Demo Login"
-              description="Test with: demo@example.com / password123"
-            />
           </CardBody>
         </Card>
-
-        {/* Footer */}
-        <p className="text-center text-xs text-neutral-600 mt-6">
-          By signing in, you agree to our{" "}
-          <Link href="#" className="text-primary-600 hover:underline font-medium">
-            Terms of Service
-          </Link>
-        </p>
       </div>
     </div>
   );

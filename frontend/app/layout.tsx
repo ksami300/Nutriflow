@@ -47,9 +47,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  userScalable: true,
-  colorScheme: "light",
-  themeColor: "#0ea5e9",
+  userScalable: false,
+  colorScheme: "dark",
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({
@@ -64,12 +64,12 @@ export default function RootLayout({
     >
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🥗</text></svg>" />
       </head>
-      <body className="min-h-screen flex flex-col bg-gradient-to-br from-neutral-50 to-neutral-100">
+      <body className="min-h-screen flex flex-col bg-slate-950 text-slate-100 overflow-x-hidden">
         <main className="flex-1">
           {children}
         </main>
@@ -78,30 +78,30 @@ export default function RootLayout({
           toastOptions={{
             duration: 3000,
             style: {
-              background: "#ffffff",
-              color: "#111827",
-              borderRadius: "12px",
-              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
-              border: "1px solid #e5e7eb",
+              background: "#111827",
+              color: "#e2e8f0",
+              borderRadius: "16px",
+              boxShadow: "0 24px 60px rgba(15, 23, 42, 0.65)",
+              border: "1px solid rgba(148, 163, 184, 0.16)",
             },
             success: {
               style: {
-                background: "#f0fdf4",
-                color: "#15803d",
+                background: "#0f172a",
+                color: "#34d399",
               },
               iconTheme: {
-                primary: "#10b981",
-                secondary: "#f0fdf4",
+                primary: "#34d399",
+                secondary: "#0f172a",
               },
             },
             error: {
               style: {
-                background: "#fef2f2",
-                color: "#991b1b",
+                background: "#0f172a",
+                color: "#fb7185",
               },
               iconTheme: {
-                primary: "#ef4444",
-                secondary: "#fef2f2",
+                primary: "#fb7185",
+                secondary: "#0f172a",
               },
             },
           }}

@@ -1,29 +1,45 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "nutriflow_history";
 
-export default function GeneratePlanPage() {
-  const [form, setForm] = useState({
-    goal: "gain",
-    weight: "",
-    height: "",
-    activity: "moderate",
-  });
+function parsePlanSections(plan: string) {
+  const lines = plan.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const sections: { title: string; content: string[] }[] = [];
+  let current = { title: "Plan", content: [] as string[] };
 
+  for (const line of lines) {
+    const match = line.match(/^(Breakfast|Lunch|Dinner|Snack|Meal)\s*[:\-]?\s*(.*)$/i);
+    if (match) {
+      if (current.content.length) {
+        sections.push(current);
+      }
+      current = { title: match[1], content: [match[2] || ""] };
+    } else {
+      current.content.push(line);
+    }
+  }
+
+  if (current.content.length) {
+    sections.push(current);
+  }
+
+  return sections;
+}
+
+export default function GeneratePlanPage() {
+  const [form, setForm] = useState({ goal: "gain", weight: "", height: "", activity: "moderate" });
   const [plan, setPlan] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
-  const [history, setHistory] = useState([]);
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const [history, setHistory] = useState<any[]>([]);
   const [userId, setUserId] = useState("");
   const [userStatus, setUserStatus] = useState<any>(null);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  // Initialize user and load history
   useEffect(() => {
     let id = localStorage.getItem("userId");
     if (!id) {
@@ -32,11 +48,9 @@ export default function GeneratePlanPage() {
     }
     setUserId(id);
 
-    // Load history
     const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     setHistory(existing);
 
-    // Fetch user status
     if (apiUrl && id) {
       fetchUserStatus(id);
     }
@@ -75,13 +89,11 @@ export default function GeneratePlanPage() {
       return false;
     }
 
+    setError("");
     return true;
   };
 
   const generatePlan = async () => {
-    setError("");
-    setSuccess(false);
-
     if (!apiUrl) {
       setError("API URL is not configured. Check NEXT_PUBLIC_API_URL");
       return;
@@ -92,6 +104,7 @@ export default function GeneratePlanPage() {
     }
 
     setLoading(true);
+    setSuccess(false);
 
     try {
       const res = await fetch(`${apiUrl}/api/generate-plan`, {
@@ -104,7 +117,6 @@ export default function GeneratePlanPage() {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         throw new Error(data.error || "Failed to generate plan");
       }
@@ -112,21 +124,15 @@ export default function GeneratePlanPage() {
       setPlan(data.plan);
       setSuccess(true);
 
-      // Save to history
       const entry = {
         id: Date.now(),
         ...form,
         plan: data.plan,
         createdAt: new Date().toISOString(),
       };
-
-      setHistory((prev) => {
-        const updated = [entry, ...prev];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        return updated;
-      });
-
-      // Refresh user status
+      const updated = [entry, ...history];
+      setHistory(updated);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       fetchUserStatus(userId);
     } catch (err: any) {
       setError(err.message || "An error occurred");
@@ -156,7 +162,6 @@ export default function GeneratePlanPage() {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         throw new Error(data.error || "Failed to create checkout session");
       }
@@ -174,46 +179,29 @@ export default function GeneratePlanPage() {
     }
   };
 
+  const planSections = useMemo(() => parsePlanSections(plan), [plan]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="mx-auto max-w-3xl">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-            🧠 Generate Your Plan
-          </h1>
-          <p className="text-gray-600">
-            Get a personalized nutrition plan powered by AI
-          </p>
-
-          {userStatus && (
-            <div className="mt-4 flex items-center gap-4 text-sm">
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full">
-                {userStatus.isPremium ? "✨ Premium" : "📊 Free"}
-              </span>
-              {!userStatus.isPremium && (
-                <span className="text-gray-600">
-                  Plans used: {userStatus.count}/3
-                </span>
-              )}
+    <div className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100">
+      <div className="mx-auto max-w-md space-y-6">
+        <section className="rounded-[32px] border border-slate-800 bg-slate-900/95 p-6 shadow-[0_35px_90px_-40px_rgba(15,23,42,0.75)]">
+          <div className="mb-6 space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-200">
+              AI powered plan
             </div>
-          )}
-        </div>
-
-        {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-          <div className="grid gap-6 mb-8">
-            {/* Goal */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                🎯 Goal
-              </label>
+              <h1 className="text-3xl font-semibold text-white">Generate your plan</h1>
+              <p className="mt-2 text-slate-400">Enter a few details and tap the CTA. Results appear immediately in premium cards.</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-semibold text-slate-200">Goal</label>
               <select
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 value={form.goal}
-                onChange={(e) =>
-                  setForm({ ...form, goal: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, goal: e.target.value })}
               >
                 <option value="gain">Gain Weight</option>
                 <option value="lose">Lose Weight</option>
@@ -221,49 +209,35 @@ export default function GeneratePlanPage() {
               </select>
             </div>
 
-            {/* Weight & Height */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  ⚖️ Weight (kg)
-                </label>
+                <label className="text-sm font-semibold text-slate-200">Weight (kg)</label>
                 <input
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   type="number"
-                  placeholder="e.g., 75"
+                  placeholder="75"
                   value={form.weight}
-                  onChange={(e) =>
-                    setForm({ ...form, weight: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, weight: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  📏 Height (cm)
-                </label>
+                <label className="text-sm font-semibold text-slate-200">Height (cm)</label>
                 <input
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   type="number"
-                  placeholder="e.g., 180"
+                  placeholder="180"
                   value={form.height}
-                  onChange={(e) =>
-                    setForm({ ...form, height: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, height: e.target.value })}
                 />
               </div>
             </div>
 
-            {/* Activity */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                💪 Activity Level
-              </label>
+              <label className="text-sm font-semibold text-slate-200">Activity level</label>
               <select
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="mt-2 w-full rounded-3xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 value={form.activity}
-                onChange={(e) =>
-                  setForm({ ...form, activity: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, activity: e.target.value })}
               >
                 <option value="low">Low (sedentary)</option>
                 <option value="moderate">Moderate (3-4 days/week)</option>
@@ -271,77 +245,92 @@ export default function GeneratePlanPage() {
                 <option value="very_high">Very High (daily intense)</option>
               </select>
             </div>
-          </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              ❌ {error}
+            {error && (
+              <div className="rounded-3xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+                Plan generated successfully!
+              </div>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                onClick={generatePlan}
+                disabled={loading}
+                className="w-full rounded-3xl bg-gradient-to-r from-blue-500 via-violet-500 to-fuchsia-500 px-5 py-4 text-sm font-semibold text-white shadow-xl transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? "Generating..." : "Generate Plan"}
+              </button>
+              <button
+                onClick={handleUpgrade}
+                disabled={upgrading}
+                className="w-full rounded-3xl border border-slate-700 bg-slate-950 px-5 py-4 text-sm font-semibold text-slate-100 transition hover:border-blue-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {upgrading ? "Processing..." : "Upgrade"}
+              </button>
             </div>
-          )}
-
-          {/* Success Message */}
-          {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
-              ✅ Plan generated successfully!
-            </div>
-          )}
-
-          {/* Buttons */}
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={generatePlan}
-              disabled={loading}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "⏳ Generating..." : "🚀 Generate Plan"}
-            </button>
-
-            <button
-              onClick={handleUpgrade}
-              disabled={upgrading}
-              className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {upgrading ? "⏳ Processing..." : "💳 Upgrade"}
-            </button>
           </div>
-        </div>
+        </section>
 
-        {/* Generated Plan */}
         {plan && (
-          <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-            <h2 className="text-2xl font-bold mb-4">📋 Your Nutrition Plan</h2>
-            <pre className="whitespace-pre-wrap text-sm leading-relaxed bg-slate-50 p-4 rounded-lg overflow-auto max-h-96">
-              {plan}
-            </pre>
-          </div>
-        )}
-
-        {/* History */}
-        {history.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold mb-4">📜 History</h2>
-            <div className="space-y-4 max-h-96 overflow-auto">
-              {history.slice(0, 10).map((entry: any) => (
-                <div
-                  key={entry.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:bg-slate-50 transition"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium text-gray-900">
-                      {entry.goal?.toUpperCase()} • {entry.weight}kg • {entry.height}cm
+          <section className="rounded-[32px] border border-slate-800 bg-slate-900/95 p-6 shadow-[0_35px_90px_-40px_rgba(15,23,42,0.75)]">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Your plan</p>
+                <h2 className="text-2xl font-semibold text-white">Personalized meal cards</h2>
+              </div>
+              <span className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs text-slate-300">
+                {new Date().toLocaleDateString()}
+              </span>
+            </div>
+            <div className="space-y-4">
+              {planSections.length > 0 ? (
+                planSections.map((section) => (
+                  <div key={section.title} className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-white">{section.title}</h3>
+                      <span className="text-xs uppercase tracking-[0.24em] text-slate-500">Meal</span>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(entry.createdAt).toLocaleDateString()}
+                    <div className="space-y-2 text-sm leading-6 text-slate-300">
+                      {section.content.map((line, idx) => (
+                        <p key={idx}>{line}</p>
+                      ))}
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {entry.plan?.substring(0, 100)}...
-                  </p>
+                ))
+              ) : (
+                <div className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+                  <pre className="whitespace-pre-wrap text-sm leading-6 text-slate-300">{plan}</pre>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {history.length > 0 && (
+          <section className="rounded-[32px] border border-slate-800 bg-slate-900/95 p-6 shadow-[0_35px_90px_-40px_rgba(15,23,42,0.75)]">
+            <div className="mb-5">
+              <h2 className="text-2xl font-semibold text-white">Recent plans</h2>
+              <p className="mt-2 text-sm text-slate-400">Your last saved nutrition recommendations.</p>
+            </div>
+            <div className="space-y-4">
+              {history.slice(0, 5).map((entry: any) => (
+                <div key={entry.id} className="rounded-3xl border border-slate-800 bg-slate-950 p-4">
+                  <div className="mb-3 flex items-center justify-between text-sm text-slate-400">
+                    <span>{entry.goal.toUpperCase()}</span>
+                    <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <p className="text-sm text-slate-300">{entry.weight} kg • {entry.height} cm • {entry.activity.replace("_", " ")}</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-400 overflow-hidden">{entry.plan}</p>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
       </div>
     </div>

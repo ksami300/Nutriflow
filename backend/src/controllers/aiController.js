@@ -1,28 +1,34 @@
-const OpenAI = require("openai").default;
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const aiService = require("../services/aiService");
 
 exports.aiCoach = async (req, res) => {
   try {
     const { message } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ message: "Message is required" });
+    if (!message || typeof message !== "string" || message.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required and must be a non-empty string",
+      });
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: "You are a helpful fitness and nutrition coach." },
-        { role: "user", content: message },
-      ],
-    });
+    const result = await aiService.getAICoachResponse(message);
 
-    res.json({ reply: completion.choices[0].message.content });
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.message,
+      });
+    }
+
+    res.json({
+      success: true,
+      reply: result.reply,
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "AI error" });
+    console.error("AI Coach error:", err);
+    res.status(500).json({
+      success: false,
+      message: "AI service temporarily unavailable",
+    });
   }
 };

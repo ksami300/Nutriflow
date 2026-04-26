@@ -1,5 +1,6 @@
 const Stripe = require("stripe");
 const User = require("../models/User");
+const paymentService = require("../services/paymentService");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -8,43 +9,48 @@ exports.createCheckout = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Учитај корисника да добијеш email
-    const user = await User.findById(userId);
+    const result = await paymentService.createCheckoutSession(userId);
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.message,
+      });
     }
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "subscription",
-      customer_email: user.email,
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            product_data: {
-              name: "NutriFlow Premium",
-            },
-            unit_amount: 999, // 9.99€
-            recurring: {
-              interval: "month",
-            },
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: `${process.env.FRONTEND_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.FRONTEND_URL}/dashboard`,
-      metadata: {
-        userId: user._id.toString(),
-      },
+    res.json({
+      success: true,
+      url: result.session.url,
     });
-
-    res.json({ url: session.url });
   } catch (err) {
     console.error("Stripe checkout error:", err);
-    res.status(500).json({ message: "Stripe error" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to create checkout session",
+    });
+  }
+};
+
+// 💳 WEBHOOK
+exports.stripeWebhook = async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error("Webhook signature verification failed:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    await paymentService.handleWebhook(event);
+    res.json({ received: true });
+  } catch (err) {
+    console.error("Webhook processing error:", err);
+    res.status(500).json({ error: "Webhook processing failed" });
   }
 };
 

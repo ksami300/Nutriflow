@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
       required: true,
+      lowercase: true,
+      trim: true,
     },
     password: {
       type: String,
@@ -24,9 +26,17 @@ const userSchema = new mongoose.Schema(
     },
 
     // 💳 STRIPE
-    stripeCustomerId: String,
+    stripeCustomerId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
   },
   { timestamps: true }
 );
+
+// Indexes
+userSchema.index({ email: 1 });
+userSchema.index({ stripeCustomerId: 1 });
 
 module.exports = mongoose.model("User", userSchema);

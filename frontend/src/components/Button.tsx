@@ -12,22 +12,22 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses = {
   primary:
-    "bg-gradient-to-r from-primary-600 to-accent-light text-white hover:from-primary-700 hover:to-accent-dark shadow-lg hover:shadow-xl active:shadow-md",
+    "bg-gradient-to-r from-blue-500 via-violet-500 to-fuchsia-500 text-white shadow-[0_24px_55px_-25px_rgba(59,130,246,0.9)] hover:shadow-[0_26px_68px_-22px_rgba(99,102,241,0.45)] hover:-translate-y-0.5 active:translate-y-0.5",
   secondary:
-    "bg-neutral-100 text-neutral-900 hover:bg-neutral-200 border border-neutral-200 active:bg-neutral-150",
+    "bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700",
   outline:
-    "border-2 border-primary-600 text-primary-600 hover:bg-primary-50 active:bg-primary-100",
-  ghost: "text-primary-600 hover:bg-primary-50 active:bg-primary-100",
+    "border border-slate-600 text-slate-100 hover:bg-slate-900 hover:border-slate-500",
+  ghost: "text-slate-100 hover:bg-slate-800/70",
   danger:
-    "bg-error text-white hover:bg-red-600 shadow-md hover:shadow-lg active:shadow-sm",
+    "bg-red-500 text-white hover:bg-red-600 shadow-lg hover:shadow-xl",
 };
 
 const sizeClasses = {
   xs: "px-3 py-1.5 text-xs font-medium rounded-md",
   sm: "px-4 py-2 text-sm font-medium rounded-lg",
-  md: "px-6 py-3 text-base font-semibold rounded-lg",
-  lg: "px-8 py-4 text-lg font-semibold rounded-xl",
-  xl: "px-10 py-5 text-xl font-bold rounded-2xl",
+  md: "px-6 py-3 text-base font-semibold rounded-xl",
+  lg: "px-8 py-4 text-lg font-semibold rounded-2xl",
+  xl: "px-10 py-5 text-xl font-bold rounded-[28px]",
 };
 
 export function Button({
@@ -46,7 +46,7 @@ export function Button({
       disabled={disabled || isLoading}
       className={`
         inline-flex items-center justify-center gap-2
-        transition-all duration-200
+        transition-all duration-200 ease-out
         disabled:opacity-50 disabled:cursor-not-allowed
         ${variantClasses[variant]}
         ${sizeClasses[size]}
@@ -58,7 +58,7 @@ export function Button({
       {isLoading ? (
         <>
           <span className="inline-block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
-          <span className="opacity-75">Loading...</span>
+          <span className="opacity-80">Loading...</span>
         </>
       ) : (
         <>
@@ -84,7 +84,7 @@ export function IconButton({
       disabled={disabled || isLoading}
       className={`
         inline-flex items-center justify-center
-        transition-all duration-200
+        transition-all duration-200 ease-out
         disabled:opacity-50 disabled:cursor-not-allowed
         rounded-lg
         ${variantClasses[variant]}
@@ -108,7 +108,7 @@ export function IconButton({
 
 export function ButtonGroup({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`inline-flex gap-2 rounded-lg overflow-hidden border border-neutral-200 [&_button]:rounded-none [&_button:first-child]:rounded-l-lg [&_button:last-child]:rounded-r-lg ${className}`}>
+    <div className={`inline-flex gap-2 rounded-2xl overflow-hidden border border-slate-700 bg-slate-950 ${className}`}>
       {children}
     </div>
   );
