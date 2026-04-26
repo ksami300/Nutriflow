@@ -155,24 +155,7 @@ app.post("/api/generate-plan", async (req, res) => {
       });
     }
 
-    return res.json({
-      success: true,
-      plan: {
-        breakfast: "Oatmeal + banana",
-        lunch: "Chicken + rice + salad",
-        dinner: "Eggs + avocado",
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-    // Get or create user
     const user = getOrCreateUser(userId);
-
-    // Check free tier limit (3 plans per user)
     if (!user.isPremium && user.count >= 3) {
       return res.status(403).json({
         error: "Free limit reached (3 plans). Upgrade to premium for unlimited access.",
@@ -181,16 +164,24 @@ app.post("/api/generate-plan", async (req, res) => {
       });
     }
 
-    // Increment usage counter
     user.count++;
 
-    // If OpenAI not available, return demo plan
+    const fallbackResponse = () => {
+      const plan = generateDemoPlan(goal, weight, height, activity);
+      return {
+        success: true,
+        plan,
+        isDemo: true,
+        userCount: user.count,
+        isPremium: user.isPremium,
+        message: "Fallback plan returned because AI planning is unavailable.",
+      };
+    };
+
     if (!openaiClient) {
-      const demoplan = generateDemoPlan(goal, weight, height, activity);
-      return res.json({ plan: demoplan, isDemo: true });
+      return res.status(200).json(fallbackResponse());
     }
 
-    // Call OpenAI API
     try {
       const completion = await openaiClient.chat.completions.create({
         model: "gpt-4o-mini",
@@ -220,29 +211,27 @@ Please include:
         temperature: 0.7,
       });
 
-      const plan = completion.choices[0]?.message?.content || generateDemoPlan(goal, weight, height, activity);
+      const plan = completion?.choices?.[0]?.message?.content?.trim();
+      if (!plan) {
+        return res.status(200).json(fallbackResponse());
+      }
 
-      res.json({
+      return res.status(200).json({
+        success: true,
         plan,
         isDemo: false,
         userCount: user.count,
         isPremium: user.isPremium,
       });
     } catch (openaiError) {
-      console.error("OpenAI API error:", openaiError.message);
-      // Fallback to demo plan if API fails
-      const demoplan = generateDemoPlan(goal, weight, height, activity);
-      res.json({
-        plan: demoplan,
-        isDemo: true,
-        warning: "Using demo plan due to API error",
-      });
+      console.error("OpenAI API error:", openaiError);
+      return res.status(200).json(fallbackResponse());
     }
   } catch (error) {
     console.error("Generate plan error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       error: "Failed to generate plan",
-      message: error.message,
+      message: error.message || "Unexpected server error",
     });
   }
 });
@@ -326,6 +315,11 @@ app.post("/api/upgrade", (req, res) => {
       message: error.message,
     });
   }
+});
+
+// API health endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
 // 404 handler
