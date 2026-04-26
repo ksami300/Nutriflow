@@ -149,12 +149,25 @@ app.post("/api/generate-plan", async (req, res) => {
     const userId = req.headers["x-user-id"] || `guest_${Date.now()}`;
     const { goal, weight, height, activity } = req.body;
 
-    // Validate input
     if (!goal || !weight || !height || !activity) {
       return res.status(400).json({
         error: "Missing required fields: goal, weight, height, activity",
       });
     }
+
+    return res.json({
+      success: true,
+      plan: {
+        breakfast: "Oatmeal + banana",
+        lunch: "Chicken + rice + salad",
+        dinner: "Eggs + avocado",
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
     // Get or create user
     const user = getOrCreateUser(userId);

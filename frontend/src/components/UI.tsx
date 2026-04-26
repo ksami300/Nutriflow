@@ -1,14 +1,16 @@
 ﻿"use client";
 
+import React from "react";
+
 export function Spinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const sizeClasses = {
     sm: "w-4 h-4",
     md: "w-6 h-6",
     lg: "w-8 h-8",
   };
-
+  
   return (
-    <div className={inline-block rounded-full border-2 border-slate-500 border-t-transparent animate-spin } />
+    <div className={`inline-block rounded-full border-2 border-slate-500 border-t-transparent animate-spin ${sizeClasses[size]}`} />
   );
 }
 
@@ -36,12 +38,9 @@ export function LoadingPage({ message = "Loading..." }: { message?: string }) {
 
 export function SkeletonText({ lines = 3, className = "" }: { lines?: number; className?: string }) {
   return (
-    <div className={space-y-2 animate-pulse }>
+    <div className={`space-y-2 animate-pulse ${className}`}>
       {Array.from({ length: lines }).map((_, i) => (
-        <div
-          key={i}
-          className={h-4 bg-slate-800 rounded-lg }
-        />
+        <div key={i} className="h-4 bg-slate-800 rounded-lg" />
       ))}
     </div>
   );
@@ -55,19 +54,19 @@ export function Badge({ label, variant = "primary", size = "md" }: { label: stri
     error: "bg-rose-500/15 text-rose-200 border border-rose-500/20",
     neutral: "bg-slate-800 text-slate-200 border border-slate-700",
   };
-
+  
   const sizeClasses = {
     sm: "px-2 py-1 text-xs font-medium rounded-full",
     md: "px-3 py-1.5 text-sm font-semibold rounded-full",
     lg: "px-4 py-2 text-base font-semibold rounded-full",
   };
 
-  return <span className={inline-flex items-center justify-center  }>{label}</span>;
+  return <span className={`inline-flex items-center justify-center ${variantClasses[variant]} ${sizeClasses[size]}`}>{label}</span>;
 }
 
 export function Progress({ value, max = 100, label, showValue = true }: { value: number; max?: number; label?: string; showValue?: boolean }) {
-  const percentage = (value / max) * 100;
-
+  const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
+  
   return (
     <div className="space-y-2">
       {(label || showValue) && (
@@ -77,9 +76,9 @@ export function Progress({ value, max = 100, label, showValue = true }: { value:
         </div>
       )}
       <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-500"
-          style={{ width: ${percentage}% }}
+        <div 
+          className="h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-500" 
+          style={{ width: `${percentage}%` }} 
         />
       </div>
     </div>
@@ -97,14 +96,7 @@ export function Tooltip({ children, content, position = "top" }: { children: Rea
   return (
     <div className="group relative inline-block">
       {children}
-      <div
-        className={
-          absolute hidden group-hover:block
-          bg-slate-900 text-slate-100 text-xs font-medium px-3 py-2 rounded-2xl
-          whitespace-nowrap pointer-events-none z-50 animate-fadeIn
-          
-        }
-      >
+      <div className={`absolute hidden group-hover:block bg-slate-900 text-slate-100 text-xs font-medium px-3 py-2 rounded-2xl whitespace-nowrap pointer-events-none z-50 animate-fadeIn ${positionClasses[position]}`}>
         {content}
       </div>
     </div>
