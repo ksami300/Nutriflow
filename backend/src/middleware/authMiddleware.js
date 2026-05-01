@@ -1,30 +1,34 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    const cookieHeader = req.headers.cookie;
-
-    let token = authHeader ? authHeader.split(" ")[1] : null;
-
-    if (!token && cookieHeader) {
-      token = cookieHeader
-        .split(";")
-        .map((cookie) => cookie.trim())
-        .find((cookie) => cookie.startsWith("token="))
-        ?.split("=")[1] || null;
-    }
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
 
     if (!token) {
-      return res.status(401).json({ message: "No token" });
+      return res.status(401).json({ message: "Authentication token missing" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("name email isPremium");
 
-    req.user = decoded;
+    if (!user) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    req.user = {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      isPremium: user.isPremium,
+    };
 
     next();
   } catch (err) {
+    console.error("Auth middleware error:", err.message);
     res.status(401).json({ message: "Unauthorized" });
   }
 };

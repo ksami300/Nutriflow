@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
     email: {
       type: String,
       unique: true,
@@ -13,19 +14,33 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+
     password: {
       type: String,
       required: true,
     },
+
     referralCode: String,
 
-    // 🔒 PREMIUM FLAG
+    // PREMIUM
     isPremium: {
       type: Boolean,
       default: false,
     },
 
-    // 💳 STRIPE
+    refreshToken: {
+      type: String,
+      select: false,
+    },
+
+    passwordResetToken: {
+      type: String,
+      select: false,
+    },
+
+    passwordResetExpires: Date,
+
+    // STRIPE
     stripeCustomerId: {
       type: String,
       unique: true,
@@ -35,8 +50,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Indexes
-userSchema.index({ email: 1 });
-userSchema.index({ stripeCustomerId: 1 });
+// ❌ OBRISALI SMO DUPLE INDEXE
 
 module.exports = mongoose.model("User", userSchema);

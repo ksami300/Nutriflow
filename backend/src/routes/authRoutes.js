@@ -1,44 +1,29 @@
 const router = require("express").Router();
-const { body } = require("express-validator");
-const { register, login, profile, forgotPassword, resetPassword } = require("../controllers/authController");
+const validateRequest = require("../middleware/validateRequest");
+const {
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} = require("../validation/schemas");
+const {
+  register,
+  login,
+  profile,
+  forgotPassword,
+  resetPassword,
+  refreshToken,
+  logout,
+} = require("../controllers/authController");
 const authMiddleware = require("../middleware/authMiddleware");
+const { authLimiter } = require("../middleware/rateLimiter");
 
-router.post(
-  "/register",
-  [
-    body("name").trim().isLength({ min: 2 }).withMessage("Name must be at least 2 characters"),
-    body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email"),
-    body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
-  ],
-  register
-);
-
-router.post(
-  "/login",
-  [
-    body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email"),
-    body("password").exists().withMessage("Password is required"),
-  ],
-  login
-);
-
+router.post("/register", authLimiter, validateRequest(registerSchema), register);
+router.post("/login", authLimiter, validateRequest(loginSchema), login);
+router.post("/refresh-token", refreshToken);
+router.post("/logout", authMiddleware, logout);
 router.get("/profile", authMiddleware, profile);
-
-router.post(
-  "/forgot-password",
-  [
-    body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email"),
-  ],
-  forgotPassword
-);
-
-router.post(
-  "/reset-password",
-  [
-    body("token").exists().withMessage("Reset token is required"),
-    body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
-  ],
-  resetPassword
-);
+router.post("/forgot-password", authLimiter, validateRequest(forgotPasswordSchema), forgotPassword);
+router.post("/reset-password", authLimiter, validateRequest(resetPasswordSchema), resetPassword);
 
 module.exports = router;

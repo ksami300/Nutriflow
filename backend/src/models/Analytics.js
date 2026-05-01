@@ -1,9 +1,9 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
-const schema = new mongoose.Schema({
+const analyticsSchema = new mongoose.Schema({
   user: String,
   action: String,
   createdAt: { type: Date, default: Date.now },
 });
 
-export default mongoose.model("Analytics", schema);
+module.exports = mongoose.model("Analytics", analyticsSchema);
