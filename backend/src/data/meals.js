@@ -1,0 +1,26 @@
+const foodDatabase = [
+  { name: "Rolled oats", category: "breakfast", protein: 13.5, carbs: 66.3, fat: 6.9, calories: 389 },
+  { name: "Egg (whole)", category: "breakfast", protein: 13.0, carbs: 1.1, fat: 11.0, calories: 155 },
+  { name: "Banana", category: "breakfast", protein: 1.1, carbs: 22.8, fat: 0.3, calories: 96 },
+  { name: "Greek yogurt", category: "snack", protein: 10.0, carbs: 3.6, fat: 0.4, calories: 59 },
+  { name: "Almonds", category: "snack", protein: 21.2, carbs: 21.6, fat: 49.9, calories: 579 },
+  { name: "Cottage cheese", category: "snack", protein: 11.1, carbs: 3.4, fat: 4.3, calories: 98 },
+  { name: "Apple", category: "snack", protein: 0.3, carbs: 14.0, fat: 0.2, calories: 52 },
+  { name: "Chicken breast", category: "lunch", protein: 31.0, carbs: 0.0, fat: 3.6, calories: 165 },
+  { name: "Brown rice", category: "lunch", protein: 2.6, carbs: 23.0, fat: 0.9, calories: 111 },
+  { name: "Broccoli", category: "lunch", protein: 2.8, carbs: 6.6, fat: 0.3, calories: 34 },
+  { name: "Salmon", category: "dinner", protein: 20.4, carbs: 0.0, fat: 13.4, calories: 208 },
+  { name: "Sweet potato", category: "dinner", protein: 1.6, carbs: 20.1, fat: 0.1, calories: 86 },
+  { name: "Green beans", category: "dinner", protein: 1.8, carbs: 7.0, fat: 0.1, calories: 31 },
+  { name: "Avocado", category: "all", protein: 2.0, carbs: 9.0, fat: 15.0, calories: 160 },
+  { name: "Whole grain bread", category: "all", protein: 13.0, carbs: 41.0, fat: 4.2, calories: 247 },
+  { name: "Turkey breast", category: "all", protein: 29.0, carbs: 0.0, fat: 1.0, calories: 135 },
+  { name: "Tuna", category: "all", protein: 29.0, carbs: 0.0, fat: 0.6, calories: 132 },
+  { name: "Quinoa", category: "all", protein: 4.4, carbs: 21.3, fat: 1.9, calories: 120 },
+  { name: "Olive oil", category: "all", protein: 0.0, carbs: 0.0, fat: 100.0, calories: 884 },
+  { name: "Spinach", category: "all", protein: 2.9, carbs: 3.6, fat: 0.4, calories: 23 },
+  { name: "Low-fat milk", category: "all", protein: 3.4, carbs: 5.0, fat: 1.0, calories: 42 },
+  { name: "Protein powder", category: "all", protein: 80.0, carbs: 8.0, fat: 2.0, calories: 400 },
+];
+
+module.exports = foodDatabase;

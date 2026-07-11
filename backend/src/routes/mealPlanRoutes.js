@@ -1,20 +1,19 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
+const authMiddleware = require("../middleware/authMiddleware");
 const validateRequest = require("../middleware/validateRequest");
 const { mealPlanSchema } = require("../validation/schemas");
 const {
-  generatePlan,
-  getPlans,
-  deletePlan,
+  createMealPlan,
+  getMealPlans,
+  getGroceryList,
+  shareMealPlan,
+  deleteMealPlan,
 } = require("../controllers/mealPlanController");
-const authMiddleware = require("../middleware/authMiddleware");
-const premiumMiddleware = require("../middleware/premiumMiddleware");
 
-router.post("/", authMiddleware, validateRequest(mealPlanSchema), generatePlan);
-router.get("/", authMiddleware, getPlans);
-router.delete("/:id", authMiddleware, deletePlan);
-router.get("/premium-only", authMiddleware, premiumMiddleware, (req, res) => {
-  res.json({ message: "Premium access confirmed" });
-});
+router.post("/", authMiddleware, validateRequest(mealPlanSchema), createMealPlan);
+router.get("/", authMiddleware, getMealPlans);
+router.get("/:id/groceries", authMiddleware, getGroceryList);
+router.post("/:id/share", authMiddleware, shareMealPlan);
+router.delete("/:id", authMiddleware, deleteMealPlan);
 
 module.exports = router;

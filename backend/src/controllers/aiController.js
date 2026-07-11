@@ -1,4 +1,5 @@
 const aiService = require("../services/aiService");
+const logger = require("../utils/logger");
 
 exports.aiCoach = async (req, res) => {
   try {
@@ -7,7 +8,7 @@ exports.aiCoach = async (req, res) => {
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Message is required and must be a non-empty string",
+        error: "Message is required and must be a non-empty string",
       });
     }
 
@@ -16,19 +17,21 @@ exports.aiCoach = async (req, res) => {
     if (!result.success) {
       return res.status(500).json({
         success: false,
-        message: result.message,
+        error: result.message,
       });
     }
 
     res.json({
       success: true,
-      reply: result.reply,
+      data: {
+        reply: result.reply,
+      },
     });
   } catch (err) {
-    console.error("AI Coach error:", err);
+    logger.error("AI Coach error:", err);
     res.status(500).json({
       success: false,
-      message: "AI service temporarily unavailable",
+      error: "AI service temporarily unavailable",
     });
   }
 };

@@ -1,10 +1,11 @@
-const mongoose = require("mongoose");
+﻿const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
+      trim: true,
     },
 
     email: {
@@ -18,11 +19,14 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      select: false,
     },
 
-    referralCode: String,
+    referralCode: {
+      type: String,
+      trim: true,
+    },
 
-    // PREMIUM
     isPremium: {
       type: Boolean,
       default: false,
@@ -40,16 +44,42 @@ const userSchema = new mongoose.Schema(
 
     passwordResetExpires: Date,
 
-    // STRIPE
     stripeCustomerId: {
       type: String,
       unique: true,
       sparse: true,
     },
+
+    aiUsageCount: {
+      type: Number,
+      default: 0,
+    },
+    aiUsageDate: {
+      type: Date,
+      default: () => new Date(),
+    },
+
+    preferences: {
+      dietType: {
+        type: String,
+        enum: ["standard", "keto", "vegan", "high-protein"],
+        default: "standard",
+      },
+      excludedFoods: {
+        type: [String],
+        default: [],
+      },
+      likedMeals: {
+        type: [String],
+        default: [],
+      },
+      dislikedMeals: {
+        type: [String],
+        default: [],
+      },
+    },
   },
   { timestamps: true }
 );
-
-// ❌ OBRISALI SMO DUPLE INDEXE
 
 module.exports = mongoose.model("User", userSchema);

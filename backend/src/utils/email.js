@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const logger = require("./logger");
 
 exports.sendEmail = async (to, subject, text) => {
   try {
@@ -17,8 +18,8 @@ exports.sendEmail = async (to, subject, text) => {
       text,
     });
 
-    console.log("📩 Email sent to:", to);
+    logger.info(`Email sent to: ${to}`);
   } catch (err) {
-    console.error("Email error:", err);
+    logger.error("Email error:", err);
   }
 };

@@ -1,41 +1,97 @@
 const Stripe = require("stripe");
 const paymentService = require("../services/paymentService");
+const logger = require("../utils/logger");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+// =======================
+// CREATE CHECKOUT
+// =======================
 
 exports.createCheckout = async (req, res) => {
   try {
     const userId = req.user.id;
+
     const result = await paymentService.createCheckoutSession(userId);
 
     if (!result.success) {
-      return res.status(400).json({ success: false, message: result.message });
+      return res.status(400).json({
+        success: false,
+        error: result.message,
+      });
     }
 
-    res.json({ success: true, url: result.session.url });
+    // ✅ FIX: koristi result.url
+    return res.status(200).json({
+      success: true,
+      data: {
+        url: result.url,
+      },
+    });
   } catch (err) {
-    console.error("Stripe checkout error:", err);
-    res.status(500).json({ success: false, message: "Failed to create checkout session" });
+    logger.error("Stripe checkout error:", err);
+
+    return res.status(500).json({
+      success: false,
+      error: "Failed to create checkout session",
+    });
   }
 };
+
+// =======================
+// SUBSCRIPTION STATUS
+// =======================
+
+exports.getSubscriptionStatus = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await paymentService.getSubscriptionStatus(userId);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    logger.error("Subscription status error:", err);
+
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch subscription status",
+    });
+  }
+};
+
+// =======================
+// STRIPE WEBHOOK
+// =======================
 
 exports.stripeWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   let event;
+
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      endpointSecret
+    );
   } catch (err) {
-    console.error("Webhook signature verification failed:", err.message);
+    logger.error("Webhook signature failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   try {
     await paymentService.handleWebhook(event);
-    res.json({ received: true });
+    return res.json({ received: true });
   } catch (err) {
-    console.error("Webhook processing error:", err);
-    res.status(500).json({ error: "Webhook processing failed" });
+    logger.error("Webhook processing error:", err);
+
+    return res.status(500).json({
+      success: false,
+      error: "Webhook processing failed",
+    });
   }
 };

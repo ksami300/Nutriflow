@@ -29,6 +29,12 @@ const mealPlanSchema = Joi.object({
   activityLevel: Joi.string()
     .valid("sedentary", "light", "moderate", "active", "veryActive")
     .required(),
+  preferences: Joi.object({
+    dietType: Joi.string()
+      .valid("standard", "keto", "vegan", "high-protein")
+      .default("standard"),
+    excludedFoods: Joi.array().items(Joi.string().trim()).default([]),
+  }).default(),
 });
 
 module.exports = {

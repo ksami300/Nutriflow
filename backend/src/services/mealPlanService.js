@@ -1,144 +1,228 @@
-const OpenAI = require("openai");
+const mealsDb = require("../data/meals");
 
-class MealPlanService {
-  constructor() {
-    this.openai = process.env.OPENAI_API_KEY
-      ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-      : null;
+const MEAL_DISTRIBUTION = [
+  { type: "breakfast", ratio: 0.25, label: "Breakfast" },
+  { type: "snack1", ratio: 0.1, label: "Morning Snack" },
+  { type: "lunch", ratio: 0.3, label: "Lunch" },
+  { type: "snack2", ratio: 0.1, label: "Afternoon Snack" },
+  { type: "dinner", ratio: 0.25, label: "Dinner" },
+];
+
+const mealTypeCategories = {
+  breakfast: ["breakfast", "all"],
+  snack1: ["snack", "all"],
+  lunch: ["lunch", "all"],
+  snack2: ["snack", "all"],
+  dinner: ["dinner", "all"],
+};
+
+const veganBlacklist = [
+  "egg (whole)",
+  "chicken breast",
+  "salmon",
+  "cottage cheese",
+  "greek yogurt",
+  "turkey breast",
+  "tuna",
+  "protein powder",
+  "low-fat milk",
+];
+
+const WEEK_DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+const normalizePreferences = (preferences = {}) => ({
+  dietType: preferences.dietType || "standard",
+  excludedFoods: Array.isArray(preferences.excludedFoods)
+    ? preferences.excludedFoods.map((item) => item.trim().toLowerCase())
+    : [],
+});
+
+const filterFoods = (mealType, preferences) => {
+  const allowedCategories = mealTypeCategories[mealType] || ["all"];
+
+  return mealsDb.filter((food) => {
+    const name = food.name.toLowerCase();
+    if (!allowedCategories.includes(food.category)) return false;
+    if (preferences.excludedFoods.includes(name)) return false;
+    if (preferences.dietType === "keto" && food.carbs > 10) return false;
+    if (preferences.dietType === "vegan" && veganBlacklist.includes(name)) return false;
+    return true;
+  });
+};
+
+const orderFoods = (foods, preferences, isPremium) => {
+  if (isPremium) {
+    return [...foods].sort(() => Math.random() - 0.5);
   }
 
-  // Calculate BMR using Mifflin-St Jeor
-  calculateBMR(weight, height, age, gender) {
-    if (gender === "male") {
-      return 10 * weight + 6.25 * height - 5 * age + 5;
-    } else {
-      return 10 * weight + 6.25 * height - 5 * age - 161;
+  if (preferences.dietType === "high-protein") {
+    return [...foods].sort((a, b) => b.protein - a.protein);
+  }
+
+  return [...foods].sort((a, b) => a.name.localeCompare(b.name));
+};
+
+const pickFoods = (mealType, preferences, isPremium) => {
+  const foods = orderFoods(filterFoods(mealType, preferences), preferences, isPremium);
+
+  if (!foods.length) {
+    throw new Error("No foods available after filtering");
+  }
+
+  const selected = [];
+  for (const food of foods) {
+    if (selected.length >= 3) break;
+    if (!selected.some((item) => item.name === food.name)) {
+      selected.push(food);
     }
   }
 
-  // Calculate TDEE
-  calculateTDEE(bmr, activityLevel) {
-    const multipliers = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      very_active: 1.9,
-    };
-    return bmr * (multipliers[activityLevel] || 1.2);
-  }
+  return selected.length ? selected : foods.slice(0, 3);
+};
 
-  // Generate demo plan (fallback)
-  generateDemoPlan(calories) {
+const scaleFood = (food, grams) => {
+  const multiplier = grams / 100;
+  return {
+    name: food.name,
+    category: food.category,
+    grams,
+    calories: Math.round((food.calories || 0) * multiplier),
+    protein: parseFloat(((food.protein || 0) * multiplier).toFixed(1)),
+    carbs: parseFloat(((food.carbs || 0) * multiplier).toFixed(1)),
+    fat: parseFloat(((food.fat || 0) * multiplier).toFixed(1)),
+  };
+};
+
+const calculateGrams = (targetCalories, food) => {
+  if (!food?.calories) return 100;
+  const grams = Math.max(50, Math.round((targetCalories / 3 / food.calories) * 100));
+  return grams;
+};
+
+const generateMealPlan = ({
+  calories,
+  macros,
+  goal,
+  preferences = {},
+  isPremium = false,
+}) => {
+  const normalizedPreferences = normalizePreferences(preferences);
+  const meals = MEAL_DISTRIBUTION.map(({ type, ratio, label }) => {
+    const targetCalories = Math.round(calories * ratio);
+    const targetProtein = Math.round(macros.protein * ratio);
+    const targetCarbs = Math.round(macros.carbs * ratio);
+    const targetFat = Math.round(macros.fat * ratio);
+
+    const foods = pickFoods(type, normalizedPreferences, isPremium).map((food) => {
+      const grams = calculateGrams(targetCalories, food);
+      return scaleFood(food, grams);
+    });
+
+    const totals = foods.reduce(
+      (acc, food) => {
+        acc.calories += food.calories;
+        acc.protein += food.protein;
+        acc.carbs += food.carbs;
+        acc.fat += food.fat;
+        return acc;
+      },
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+
     return {
-      breakfast: {
-        name: "Oatmeal with Berries",
-        calories: Math.round(calories * 0.25),
-        protein: 15,
-        carbs: 60,
-        fat: 10,
-      },
-      lunch: {
-        name: "Grilled Chicken Salad",
-        calories: Math.round(calories * 0.3),
-        protein: 40,
-        carbs: 30,
-        fat: 15,
-      },
-      dinner: {
-        name: "Salmon with Quinoa",
-        calories: Math.round(calories * 0.3),
-        protein: 35,
-        carbs: 40,
-        fat: 20,
-      },
-      snacks: {
-        name: "Greek Yogurt with Nuts",
-        calories: Math.round(calories * 0.15),
-        protein: 20,
-        carbs: 20,
-        fat: 15,
+      type,
+      name: label,
+      foods,
+      totals,
+      target: {
+        calories: targetCalories,
+        protein: targetProtein,
+        carbs: targetCarbs,
+        fat: targetFat,
       },
     };
-  }
+  });
 
-  async generateMealPlan(userId, goals, preferences) {
-    try {
-      const { weight, height, age, gender, activityLevel, goal } = goals;
+  return { meals };
+};
 
-      // Validate inputs
-      if (!weight || !height || !age || !gender || !activityLevel || !goal) {
-        return {
-          success: false,
-          message: "Missing required fields: weight, height, age, gender, activityLevel, goal",
-        };
-      }
+const cloneMealWithVariation = (meal, dayIndex) => {
+  const variance = 1 + ((dayIndex - 3) * 0.05);
+  const foods = meal.foods.map((food) => {
+    const grams = Math.max(50, Math.round(food.grams * variance));
+    return scaleFood(food, grams);
+  });
 
-      // Calculate BMR and TDEE
-      const bmr = this.calculateBMR(weight, height, age, gender);
-      const tdee = this.calculateTDEE(bmr, activityLevel);
+  const totals = foods.reduce(
+    (acc, food) => {
+      acc.calories += food.calories;
+      acc.protein += food.protein;
+      acc.carbs += food.carbs;
+      acc.fat += food.fat;
+      return acc;
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  );
 
-      // Adjust calories based on goal
-      let targetCalories;
-      if (goal === "lose") {
-        targetCalories = tdee - 500;
-      } else if (goal === "gain") {
-        targetCalories = tdee + 500;
-      } else {
-        targetCalories = tdee;
-      }
+  return {
+    ...meal,
+    foods,
+    totals,
+  };
+};
 
-      // Ensure reasonable calorie range
-      targetCalories = Math.max(1200, Math.min(4000, targetCalories));
+const createWeeklyPlanFromDaily = (dailyPlan) => ({
+  weeklyPlan: WEEK_DAYS.map((day, index) => ({
+    day,
+    meals: dailyPlan.meals.map((meal) => cloneMealWithVariation(meal, index)),
+  })),
+});
 
-      let mealPlan;
-      let note = null;
+const generateWeeklyPlan = (options) => {
+  const dailyPlan = generateMealPlan(options);
+  return createWeeklyPlanFromDaily(dailyPlan);
+};
 
-      // If OpenAI not available, return demo plan
-      if (!this.openai) {
-        mealPlan = this.generateDemoPlan(targetCalories);
-        note = "This is a demo plan. For personalized recommendations, ensure OPENAI_API_KEY is configured.";
-      } else {
-        // Call OpenAI API
-        const prompt = `Generate a personalized meal plan for someone with these stats:
-- Daily calories: ${targetCalories}
-- Goal: ${goal} weight
-- Gender: ${gender}
-- Activity level: ${activityLevel}
-- Dietary preferences: ${preferences || "No specific preferences"}
+const generateGroceryList = (plan) => {
+  const foodTotals = new Map();
+  const days = Array.isArray(plan.weeklyPlan) && plan.weeklyPlan.length
+    ? plan.weeklyPlan
+    : Array.isArray(plan.meals) && plan.meals.length
+    ? [{ day: "Day 1", meals: plan.meals }]
+    : [];
 
-Please provide a realistic meal plan with breakfast, lunch, dinner, and snacks. Include approximate calories, protein, carbs, and fat for each meal. Make it practical and sustainable.`;
+  days.forEach((day) => {
+    day.meals.forEach((meal) => {
+      (meal.foods || []).forEach((food) => {
+        if (!food?.name) {
+          return;
+        }
 
-        const completion = await this.openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
-          messages: [
-            { role: "system", content: "You are a professional nutritionist. Provide evidence-based meal plans." },
-            { role: "user", content: prompt },
-          ],
-          max_tokens: 1000,
-        });
+        const normalizedName = food.name.trim();
+        if (!normalizedName) {
+          return;
+        }
 
-        mealPlan = completion.choices[0].message.content;
-      }
+        const current = foodTotals.get(normalizedName) || 0;
+        foodTotals.set(normalizedName, current + (Number(food.grams) || 0));
+      });
+    });
+  });
 
-      return {
-        success: true,
-        mealPlan: {
-          calories: targetCalories,
-          bmr: Math.round(bmr),
-          tdee: Math.round(tdee),
-          plan: mealPlan,
-          note,
-        },
-      };
-    } catch (error) {
-      console.error("Meal plan generation error:", error);
-      return {
-        success: false,
-        message: "Failed to generate meal plan",
-      };
-    }
-  }
-}
+  return {
+    groceries: [...foodTotals.entries()].map(([name, totalGrams]) => ({
+      name,
+      totalGrams,
+    })),
+  };
+};
 
-module.exports = new MealPlanService();
+module.exports = { generateMealPlan, generateWeeklyPlan, generateGroceryList };

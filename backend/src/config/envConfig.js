@@ -6,9 +6,10 @@ dotenv.config();
 const envSchema = Joi.object({
   NODE_ENV: Joi.string().valid("development", "production", "test").default("development"),
   PORT: Joi.number().default(5000),
-  MONGO_URI: Joi.string().uri().required(),
+  MONGO_URI: Joi.string().required(),
   JWT_SECRET: Joi.string().min(32).required(),
-  FRONTEND_URL: Joi.string().uri().required(),
+  OPENAI_API_KEY: Joi.string().required(),
+  FRONTEND_URL: Joi.string().required(),
   STRIPE_SECRET_KEY: Joi.string().required(),
   STRIPE_PRICE_ID: Joi.string().required(),
   STRIPE_WEBHOOK_SECRET: Joi.string().required(),

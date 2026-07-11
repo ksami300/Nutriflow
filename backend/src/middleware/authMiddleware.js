@@ -1,22 +1,28 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const logger = require("../utils/logger");
 
 module.exports = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith("Bearer ")
-      ? authHeader.split(" ")[1]
-      : null;
 
-    if (!token) {
-      return res.status(401).json({ message: "Authentication token missing" });
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized: missing token",
+      });
     }
 
+    const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select("name email isPremium");
+
+    const user = await User.findById(decoded.id).select("_id name email isPremium");
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid token" });
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized: user not found",
+      });
     }
 
     req.user = {
@@ -28,7 +34,11 @@ module.exports = async (req, res, next) => {
 
     next();
   } catch (err) {
-    console.error("Auth middleware error:", err.message);
-    res.status(401).json({ message: "Unauthorized" });
+    logger.error("AUTH ERROR:", err);
+
+    return res.status(401).json({
+      success: false,
+      error: "Invalid or expired token",
+    });
   }
 };

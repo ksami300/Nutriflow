@@ -12,8 +12,21 @@ exports.generatePDF = (plan, res) => {
 
   doc.moveDown();
 
-  plan.meals.forEach((meal) => {
-    doc.text(`${meal.name} - ${meal.calories} kcal`);
+  const weeklyPlan =
+    Array.isArray(plan.weeklyPlan) && plan.weeklyPlan.length
+      ? plan.weeklyPlan
+      : plan.meals
+      ? [{ day: "Day 1", meals: plan.meals }]
+      : [];
+
+  weeklyPlan.forEach((day) => {
+    doc.fontSize(14).text(day.day);
+    day.meals.forEach((meal) => {
+      doc.fontSize(12).text(`${meal.name} - ${meal.totals?.calories || 0} kcal`, {
+        indent: 10,
+      });
+    });
+    doc.moveDown();
   });
 
   doc.end();

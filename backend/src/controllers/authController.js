@@ -1,56 +1,35 @@
-const crypto = require("crypto");
-const jwt = require("jsonwebtoken");
+﻿const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const env = require("../config/envConfig");
+const logger = require("../utils/logger");
 const { sendEmail } = require("../utils/email");
+const {
+  createAccessToken,
+  createRefreshToken,
+  attachRefreshCookie,
+  clearRefreshCookie,
+} = require("../services/authService");
 
-const createAccessToken = (user) =>
-  jwt.sign(
-    {
-      id: user._id.toString(),
-      isPremium: user.isPremium,
-    },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: "15m",
-    }
-  );
+const hashToken = (token) =>
+  crypto.createHash("sha256").update(token).digest("hex");
 
-const createRefreshToken = () => crypto.randomBytes(64).toString("hex");
-
-const attachRefreshCookie = (res, refreshToken) => {
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-    path: "/",
-  });
-};
-
-const clearCookies = (res) => {
-  res.cookie("refreshToken", "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
-    expires: new Date(0),
-    path: "/",
-  });
-};
+const createUserPayload = (user) => ({
+  id: user._id.toString(),
+  name: user.name,
+  email: user.email,
+  isPremium: user.isPremium,
+});
 
 const sendUserResponse = (user, token, res, statusCode = 200) => {
-  const payload = {
-    id: user._id,
-    name: user.name,
-    email: user.email,
-    isPremium: user.isPremium,
-  };
-
   attachRefreshCookie(res, user.refreshToken);
 
   return res.status(statusCode).json({
-    token,
-    user: payload,
+    success: true,
+    data: {
+      token,
+      user: createUserPayload(user),
+    },
   });
 };
 
@@ -60,32 +39,36 @@ exports.register = async (req, res) => {
 
     const exists = await User.findOne({ email });
     if (exists) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(409).json({ success: false, error: "User already exists" });
     }
 
-    const hashed = await bcrypt.hash(password, 10);
-    const referralCode = crypto.randomBytes(3).toString("hex");
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const refreshToken = createRefreshToken();
 
     const user = await User.create({
       name,
       email,
-      password: hashed,
-      referralCode,
+      password: hashedPassword,
+      referralCode: crypto.randomBytes(3).toString("hex"),
       isPremium: false,
-      refreshToken: createRefreshToken(),
+      refreshToken,
     });
 
-    await sendEmail(
-      user.email,
-      "Welcome to NutriFlow",
-      `Hi ${user.name},\n\nWelcome to NutriFlow! Your AI-powered nutrition journey starts now.\n\nBest,\nNutriFlow Team`
-    );
+    try {
+      await sendEmail(
+        user.email,
+        "Welcome to NutriFlow",
+        `Hi ${user.name},\n\nWelcome to NutriFlow!\n\nEnjoy your journey 🚀`
+      );
+    } catch (error) {
+      logger.warn("Welcome email failed:", error.message);
+    }
 
     const token = createAccessToken(user);
     return sendUserResponse(user, token, res, 201);
   } catch (err) {
-    console.error("Register error:", err);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Register error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
@@ -93,48 +76,36 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select("+refreshToken +password isPremium name email");
+    const user = await User.findOne({ email }).select("+password +refreshToken");
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(401).json({ success: false, error: "Invalid credentials" });
     }
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res.status(400).json({ message: "Invalid credentials" });
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ success: false, error: "Invalid credentials" });
     }
 
+    // 🔥 ROTATE refresh token
     user.refreshToken = createRefreshToken();
     await user.save();
 
-    const token = createAccessToken(user);
-    return sendUserResponse(user, token, res);
+    const accessToken = createAccessToken(user);
+    attachRefreshCookie(res, user.refreshToken);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        token: accessToken,
+        user: createUserPayload(user),
+      },
+    });
+
   } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-exports.refreshToken = async (req, res) => {
-  try {
-    const refreshToken = req.cookies?.refreshToken;
-    if (!refreshToken) {
-      return res.status(401).json({ message: "Refresh token missing" });
-    }
-
-    const user = await User.findOne({ refreshToken }).select("+refreshToken isPremium name email");
-    if (!user) {
-      return res.status(401).json({ message: "Invalid refresh token" });
-    }
-
-    user.refreshToken = createRefreshToken();
-    await user.save();
-
-    const token = createAccessToken(user);
-    return sendUserResponse(user, token, res);
-  } catch (err) {
-    console.error("Refresh token error:", err);
-    res.status(500).json({ message: "Unable to refresh token" });
+    logger.error("LOGIN ERROR:", err);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
@@ -142,14 +113,52 @@ exports.logout = async (req, res) => {
   try {
     const refreshToken = req.cookies?.refreshToken;
     if (refreshToken) {
-      await User.findOneAndUpdate({ refreshToken }, { refreshToken: null });
+      const user = await User.findOne({ refreshToken }).select("+refreshToken");
+      if (user) {
+        user.refreshToken = undefined;
+        await user.save();
+      }
     }
 
-    clearCookies(res);
-    res.json({ message: "Logged out successfully" });
+    clearRefreshCookie(res);
+
+    return res.status(200).json({ success: true, data: { message: "Logged out" } });
   } catch (err) {
-    console.error("Logout error:", err);
-    res.status(500).json({ message: "Unable to logout" });
+    logger.error("Logout error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+exports.refreshToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken) {
+      return res.status(401).json({ success: false, error: "Refresh token missing" });
+    }
+
+    const user = await User.findOne({ refreshToken }).select("+refreshToken");
+    if (!user) {
+      clearRefreshCookie(res);
+      return res.status(401).json({ success: false, error: "Invalid refresh token" });
+    }
+
+    const newRefreshToken = createRefreshToken();
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    const token = createAccessToken(user);
+    attachRefreshCookie(res, newRefreshToken);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        token,
+        user: createUserPayload(user),
+      },
+    });
+  } catch (err) {
+    logger.error("Refresh error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
@@ -160,17 +169,10 @@ exports.profile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json({
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        isPremium: user.isPremium,
-      },
-    });
+    return res.status(200).json({ success: true, data: { user: createUserPayload(user) } });
   } catch (err) {
-    console.error("Profile error:", err);
-    res.status(500).json({ message: "Server error" });
+    logger.error("Profile error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
@@ -180,50 +182,61 @@ exports.forgotPassword = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(200).json({ message: "If the email exists, a reset link has been sent" });
+      return res.json({ message: "If the email exists, a reset link has been sent" });
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    user.passwordResetToken = resetToken;
+    user.passwordResetToken = hashToken(resetToken);
     user.passwordResetExpires = Date.now() + 60 * 60 * 1000;
     await user.save();
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-
+    const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${resetToken}`;
     await sendEmail(
       user.email,
-      "NutriFlow Password Reset",
-      `You requested a password reset. Click the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`
+      "Password Reset",
+      `Reset your password:\n\n${resetUrl}`
     );
 
-    res.json({ message: "If the email exists, a reset link has been sent" });
+    return res.status(200).json({ success: true, data: { message: "If the email exists, a reset link has been sent" } });
   } catch (err) {
-    console.error("Forgot password error:", err);
-    res.status(500).json({ message: "Unable to process request" });
+    logger.error("Forgot password error:", err);
+    res.status(500).json({ success: false, error: "Unable to process request" });
   }
 };
 
 exports.resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;
+    const hashedToken = hashToken(token);
+
     const user = await User.findOne({
-      passwordResetToken: token,
+      passwordResetToken: hashedToken,
       passwordResetExpires: { $gt: Date.now() },
-    });
+    }).select("+refreshToken");
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired reset token" });
+      return res.status(400).json({ message: "Invalid or expired token" });
     }
 
-    user.password = await bcrypt.hash(password, 10);
+    user.password = await bcrypt.hash(password, 12);
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
-    user.refreshToken = null;
+    user.refreshToken = createRefreshToken();
     await user.save();
 
-    res.json({ message: "Password reset successfully" });
+    const accessToken = createAccessToken(user);
+    attachRefreshCookie(res, user.refreshToken);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        message: "Password reset successful",
+        token: accessToken,
+        user: createUserPayload(user),
+      },
+    });
   } catch (err) {
-    console.error("Reset password error:", err);
-    res.status(500).json({ message: "Unable to reset password" });
+    logger.error("Reset password error:", err);
+    res.status(500).json({ success: false, error: "Unable to reset password" });
   }
 };
