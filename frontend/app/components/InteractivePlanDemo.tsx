@@ -60,7 +60,10 @@ export default function InteractivePlanDemo() {
     setIsLoading(true);
   };
 
-  const calories = goal === "lose weight" ? 1800 : goal === "gain muscle" ? 2500 : 2200;
+    // Dinamički proračun na osnovu Mifflin-St Jeor formule za 96kg
+  const bmr = (10 * weight) + (6.25 * 180) - (5 * 25) + 5;
+  const tdee = bmr * 1.55; // Aktivni sportista
+  const calories = Math.round(goal === "lose weight" ? tdee - 500 : goal === "gain muscle" ? tdee + 500 : tdee);
   const meals = sampleMeals[dietType as keyof typeof sampleMeals] || sampleMeals.standard;
 
   return (
