@@ -156,7 +156,7 @@ History (DO NOT REPEAT these meals or foods):
 Return only JSON with days: [ { day: "Monday", meals: [...] }, ... ].`;
 
   const completion = await client.chat.completions.create({
-    model: "gpt-4.1-mini",
+    model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
     temperature: 0,
   });
