@@ -1,97 +1,29 @@
-const Stripe = require("stripe");
-const paymentService = require("../services/paymentService");
-const logger = require("../utils/logger");
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-// =======================
-// CREATE CHECKOUT
-// =======================
+const User = require('../models/User');
+const logger = require('../utils/logger');
 
 exports.createCheckout = async (req, res) => {
   try {
     const userId = req.user.id;
-
-    const result = await paymentService.createCheckoutSession(userId);
-
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        error: result.message,
-      });
-    }
-
-    // ✅ FIX: koristi result.url
-    return res.status(200).json({
-      success: true,
-      data: {
-        url: result.url,
-      },
-    });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+    user.isPremium = true;
+    await user.save();
+    logger.info('[SIMULACIJA] Premium uspesno aktiviran za: ' + userId);
+    return res.status(200).json({ success: true, data: { url: 'http://localhost:3000/dashboard?success=true' } });
   } catch (err) {
-    logger.error("Stripe checkout error:", err);
-
-    return res.status(500).json({
-      success: false,
-      error: "Failed to create checkout session",
-    });
+    return res.status(500).json({ success: false, error: err.message });
   }
 };
-
-// =======================
-// SUBSCRIPTION STATUS
-// =======================
 
 exports.getSubscriptionStatus = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    const result = await paymentService.getSubscriptionStatus(userId);
-
-    return res.status(200).json({
-      success: true,
-      data: result,
-    });
+    const user = await User.findById(req.user.id);
+    return res.status(200).json({ success: true, data: { isPremium: Boolean(user?.isPremium) } });
   } catch (err) {
-    logger.error("Subscription status error:", err);
-
-    return res.status(500).json({
-      success: false,
-      error: "Failed to fetch subscription status",
-    });
+    return res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// =======================
-// STRIPE WEBHOOK
-// =======================
-
 exports.stripeWebhook = async (req, res) => {
-  const sig = req.headers["stripe-signature"];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      endpointSecret
-    );
-  } catch (err) {
-    logger.error("Webhook signature failed:", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  try {
-    await paymentService.handleWebhook(event);
-    return res.json({ received: true });
-  } catch (err) {
-    logger.error("Webhook processing error:", err);
-
-    return res.status(500).json({
-      success: false,
-      error: "Webhook processing failed",
-    });
-  }
+  return res.json({ received: true });
 };
