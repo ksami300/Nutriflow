@@ -11,6 +11,9 @@ const {
   clearRefreshCookie,
 } = require("../services/authService");
 
+// 🔥 UVOZ NOVOG RETENTION SISTEMA ZA MOTIVACIJU KORISNIKA
+const { sendMotivationEmail } = require("../services/motivationEmailService");
+
 const hashToken = (token) =>
   crypto.createHash("sha256").update(token).digest("hex");
 
@@ -54,6 +57,7 @@ exports.register = async (req, res) => {
       refreshToken,
     });
 
+    // 📧 1. Standardni fabrički Welcome Mejl (Sa asinhronom izolacijom)
     try {
       await sendEmail(
         user.email,
@@ -63,6 +67,11 @@ exports.register = async (req, res) => {
     } catch (error) {
       logger.warn("Welcome email failed:", error.message);
     }
+
+    // 🔥 2. OKIDANJE BRUTALNE AI COACH RETENTION MOTIVACIJE ZA KORISNIKA
+    sendMotivationEmail(user.email, user.name).catch((error) => {
+      logger.warn("Retention motivational email failed:", error.message);
+    });
 
     const token = createAccessToken(user);
     return sendUserResponse(user, token, res, 201);

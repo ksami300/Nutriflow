@@ -1,3 +1,4 @@
+const premiumMiddleware = require('../middleware/premiumMiddleware');
 const router = require("express").Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const validateRequest = require("../middleware/validateRequest");
