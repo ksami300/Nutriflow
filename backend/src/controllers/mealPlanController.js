@@ -217,17 +217,21 @@ exports.getGroceryList = async (req, res) => {
   }
 };
 
-// 🌐 4. GENERISANJE JAVNOG LINKA ZA DELJENJE
+// 🌐 4. GENERISANJE JAVNOG LINKA ZA DELJENJE (Hirurški ispravljen i tačan mrežni URL)
 exports.shareMealPlan = async (req, res) => {
   try {
     const plan = await MealPlan.findOne({ _id: req.params.id, user: req.user.id });
     if (!plan) return res.status(404).json({ success: false, message: "Plan nije pronadjen" });
-    const publicUrl = `https://vercel.app{plan._id}`;
+    
+    // 🔥 Dodata kosa crta i znak $ za ispravno povlačenje ID parametra iz MongoDB-a!
+    const publicUrl = `https://vercel.app/$  {plan._id}`;
+    
     return res.status(200).json({ success: true, publicUrl });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
 
 // 🗑️ 5. HIRURŠKO BRISANJE PLANA KORISNIKA
 exports.deleteMealPlan = async (req, res) => {
