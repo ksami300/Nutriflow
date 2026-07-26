@@ -10,7 +10,7 @@ function DashboardContent() {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [dietType, setDietType] = useState("standard");
-  const [trainingDays, setTrainingDays] = useState(3); // 👈 Klijent bira 2 ili 3 dana!
+  const [trainingDays, setTrainingDays] = useState(3); // Klijent bira 2 ili 3 dana!
   const [resultPlan, setResultPlan] = useState<any>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
 
@@ -49,7 +49,7 @@ function DashboardContent() {
       await loadPlans();
     } catch (err: any) {
       error("Gen plan error:", err.message);
-    } finally {
+    } campaigners: finally {
       setLoading(false);
     }
   };
@@ -111,7 +111,6 @@ function DashboardContent() {
               </select>
             </div>
 
-            {/* 🏈 IZBOR BROJA DANA ZA PREMIUM TRENING */}
             <div className="space-y-4">
               <label className="block text-sm font-medium text-slate-700">NFL Training Frequency</label>
               <select value={trainingDays} onChange={(e) => setTrainingDays(Number(e.target.value))} className="w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-4 text-base text-slate-900 focus:outline-none">
@@ -126,36 +125,50 @@ function DashboardContent() {
           </div>
 
           <div className="space-y-6">
-            {/* 👑 VIZUELNI PRIKAZ SUROVE PREMIUM MOTIVACIJE I NFL TRENINGA */}
-            {resultPlan?.premiumMotivation && (
-              <div className="rounded-[32px] bg-gradient-to-br from-slate-900 to-slate-950 p-6 text-white shadow-xl border border-slate-800">
-                <p className="text-xs font-bold uppercase tracking-widest text-amber-400">{resultPlan.premiumMotivation.title}</p>
-                <p className="mt-3 text-lg font-medium italic text-slate-100">"{resultPlan.premiumMotivation.quote}"</p>
-              </div>
-            )}
-
-            {resultPlan?.premiumWorkout && (
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-bold text-slate-950">🏋️‍♂️ {resultPlan.premiumWorkout.type}</h3>
-                <p className="mt-2 text-sm text-slate-500">{resultPlan.premiumWorkout.description}</p>
-                
-                <div className="mt-6 space-y-4">
-                  {resultPlan.premiumWorkout.schedule.map((day: any, i: number) => (
-                    <div key={i} className="rounded-2xl bg-slate-50 p-4 border border-slate-100">
-                      <h4 className="font-bold text-slate-950 border-b border-slate-200 pb-2 mb-3">{day.day}</h4>
-                      <div className="space-y-3">
-                        {day.exercises.map((ex: any, exI: number) => (
-                          <div key={exI} className="text-sm">
-                            <p className="font-semibold text-emerald-600">{ex.name} <span className="text-slate-500 font-normal">({ex.volume})</span></p>
-                            <p className="text-xs text-slate-600 mt-1">{ex.form}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+            {/* ⏳ POJAČANI VIZUELNI LOADING SHIMMER SKELETON */}
+            {loading ? (
+              <div className="animate-pulse space-y-4 rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="h-6 w-1/3 rounded-full bg-slate-200"></div>
+                <div className="h-4 w-full rounded-full bg-slate-100"></div>
+                <div className="h-4 w-5/6 rounded-full bg-slate-100"></div>
+                <div className="mt-6 space-y-3">
+                  <div className="h-16 w-full rounded-2xl bg-slate-50 border border-slate-100"></div>
+                  <div className="h-16 w-full rounded-2xl bg-slate-50 border border-slate-100"></div>
                 </div>
               </div>
-            )}
+            ) : resultPlan ? (
+              <div className="space-y-6">
+                {resultPlan.premiumMotivation && (
+                  <div className="rounded-[32px] bg-gradient-to-br from-slate-900 to-slate-950 p-6 text-white shadow-xl border border-slate-800">
+                    <p className="text-xs font-bold uppercase tracking-widest text-amber-400">{resultPlan.premiumMotivation.title}</p>
+                    <p className="mt-3 text-lg font-medium italic text-slate-100">"{resultPlan.premiumMotivation.quote}"</p>
+                  </div>
+                )}
+
+                {resultPlan.premiumWorkout && (
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                    <h3 className="text-xl font-bold text-slate-950">🏋️‍♂️ {resultPlan.premiumWorkout.type}</h3>
+                    <p className="mt-2 text-sm text-slate-500">{resultPlan.premiumWorkout.description}</p>
+                    
+                    <div className="mt-6 space-y-4">
+                      {resultPlan.premiumWorkout.schedule.map((day: any, i: number) => (
+                        <div key={i} className="rounded-2xl bg-slate-50 p-4 border border-slate-100">
+                          <h4 className="font-bold text-slate-950 border-b border-slate-200 pb-2 mb-3">{day.day}</h4>
+                          <div className="space-y-3">
+                            {day.exercises.map((ex: any, exI: number) => (
+                              <div key={exI} className="text-sm">
+                                <p className="font-semibold text-emerald-600">{ex.name} <span className="text-slate-500 font-normal">({ex.volume})</span></p>
+                                <p className="text-xs text-slate-600 mt-1">{ex.form}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
 
             {/* 📊 INTERAKTIVNA TABELA ISTORIJE PLANOVA */}
             <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
@@ -183,9 +196,7 @@ function DashboardContent() {
                             <button onClick={() => handleShare(p._id)} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition">
                               Podeli Link
                             </button>
-                            <button onClick={() => handleDelete(p._id)} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 transition">
-                              Obriši
-                            </button>
+<button onClick={() => handleDelete(p._id)} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 transition">Obriši</button>
                           </td>
                         </tr>
                       ))}
@@ -203,8 +214,8 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <DashboardContent />
+    <Suspense fallback="Loading...">
+      <Dashboard />
     </Suspense>
   );
 }
