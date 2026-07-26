@@ -20,6 +20,9 @@ const { stripeWebhook } = require("./controllers/paymentController");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const { apiLimiter } = require("./middleware/rateLimiter");
 
+// 🔥 UVOZ SENTRY ERROR TRACKING PODSISTEMA
+const { sentryErrorHandler } = require("./middleware/sentryMiddleware");
+
 const app = express();
 
 app.set("trust proxy", 1);
@@ -75,6 +78,10 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/health", healthRoutes);
 
 app.use(notFound);
+
+// 🛡️ SENTRY PRESRETAČ GREŠAKA (Mora biti postavljen tačno ovde pre finalnog handlera!)
+app.use(sentryErrorHandler);
+
 app.use(errorHandler);
 
 module.exports = app;
