@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { getMyPlans, generatePlan, getSubscriptionStatus, createCheckoutSession } from "@/lib/api";
+import { getMyPlans, generatePlan, deletePlan, sharePlan } from "@/lib/api";
 import { error } from "@/lib/logger";
 
 function DashboardContent() {
@@ -10,7 +10,6 @@ function DashboardContent() {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [dietType, setDietType] = useState("standard");
-  const [isPremium, setIsPremium] = useState(true);
   const [resultPlan, setResultPlan] = useState<any>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
 
@@ -25,8 +24,6 @@ function DashboardContent() {
 
   useEffect(() => {
     loadPlans();
-    
-    // 💳 KONTROLISANI MONETIZACIONI HVATAČ (Čita uspeh uplate direktno sa Stripe-a!)
     if (searchParams.get("success") === "true") {
       setPaymentStatus("success");
     } else if (searchParams.get("canceled") === "true") {
@@ -55,11 +52,30 @@ function DashboardContent() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Da li ste sigurni da želite da obrišete ovaj plan ishrane?")) return;
+    try {
+      await deletePlan(id);
+      await loadPlans();
+      if (resultPlan?._id === id) setResultPlan(null);
+    } catch (err: any) {
+      error("Delete error:", err.message);
+    }
+  };
+
+  const handleShare = async (id: string) => {
+    try {
+      const data = await sharePlan(id);
+      alert(`🔗 Vaš javni link za deljenje je spreman!\nKopirajte ga: ${data?.publicUrl || "https://vercel.app"}`);
+    } catch (err: any) {
+      error("Share error:", err.message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 py-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         
-        {/* 🔥 REAL-TIME STRIPE TOAST NOTIFIKACIJE NA EKRANU */}
         {paymentStatus === "success" && (
           <div className="mb-6 rounded-[24px] bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 font-semibold shadow-sm">
             🎉 USPEH: Vaša Erste/George uplata je uspešno legla! Premium AI Coach je otključan!
@@ -98,17 +114,52 @@ function DashboardContent() {
               {loading ? "Generating..." : "Generate AI Plan"}
             </button>
           </div>
+
           <div className="space-y-6">
-            {resultPlan ? (
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <p className="text-xl font-bold text-emerald-600">💪 AI Plan uspešno generisan!</p>
-                <p className="mt-2 text-slate-700">Target Calories: {resultPlan.calories || 2800} kcal</p>
-              </div>
-            ) : (
-              <div className="rounded-[32px] border border-slate-200 bg-white p-12 text-center text-slate-500 shadow-sm">
-                Izaberite režim i generišite svoj prvi AI plan ishrane!
+            {resultPlan && (
+              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm border-l-4 border-l-emerald-500">
+                <p className="text-xl font-bold text-emerald-600">💪 Novi AI Plan uspešno generisan!</p>
+                <p className="mt-2 text-slate-700">Cilj: {resultPlan.goal} | Kalorije: {resultPlan.calories} kcal</p>
               </div>
             )}
+
+            {/* 📊 KRALJEVSKA TABELA ISTORIJE PLANOVA */}
+            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm overflow-hidden">
+              <h2 className="text-lg font-bold text-slate-950 mb-4">Istorija generisanih planova ishrane</h2>
+              {plans.length === 0 ? (
+                <p className="text-slate-500 text-center py-6">Nemate sačuvanih planova. Izaberite režim i generišite prvi plan!</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-sm font-semibold text-slate-500">
+                        <th className="pb-3">Cilj</th>
+                        <th className="pb-3">Kalorije</th>
+                        <th className="pb-3">Datum</th>
+                        <th className="pb-3 text-right">Akcije</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-sm text-slate-700">
+                      {plans.map((p) => (
+                        <tr key={p._id} className="hover:bg-slate-50 transition-colors">
+                          <td className="py-4 font-medium text-slate-950 capitalize">{p.goal}</td>
+                          <td className="py-4">{p.calories} kcal</td>
+                          <td className="py-4">{new Date(p.createdAt).toLocaleDateString("sr-RS")}</td>
+                          <td className="py-4 text-right flex justify-end gap-2">
+                            <button onClick={() => handleShare(p._id)} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition">
+                              Podeli Link
+                            </button>
+                            <button onClick={() => handleDelete(p._id)} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 transition">
+                              Obriši
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </div>
