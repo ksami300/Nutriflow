@@ -26,7 +26,7 @@ app.set("trust proxy", 1);
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(morgan("combined", { stream: logger.stream }));
 
-// ✅ Otvorene mrezne kapije za lokalni saobracaj i spajanje Windows/WSL-a
+// ✅ Otvorene mrežne kapije za lokalni saobraćaj i spajanje Windows/WSL-a
 app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
 
@@ -52,6 +52,18 @@ app.use((req, res, next) => {
 });
 app.use(hpp());
 app.use(apiLimiter);
+
+// ======================================================================
+// 🌐 KRUNSKA BAZNA RUTA (Potvrda rada servera za diplomsku komisiju)
+// ======================================================================
+app.get("/", (_req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "NutriFlow Backend API is running successfully in production-ready mode",
+    version: "1.0.0",
+    status: "healthy"
+  });
+});
 
 // =======================
 // API ROUTES MAPIRANJE
