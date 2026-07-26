@@ -5,7 +5,6 @@ import { error, warn } from "@/lib/logger";
 // =======================
 // BASE CONFIG
 // =======================
-
 const API = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000",
   withCredentials: true,
@@ -13,38 +12,32 @@ const API = axios.create({
     "Content-Type": "application/json",
   },
 });
+
 // =======================
 // REQUEST INTERCEPTOR
 // =======================
-
 API.interceptors.request.use((config) => {
   const token = getToken();
-
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-
   return config;
 });
 
 // =======================
 // RESPONSE INTERCEPTOR
 // =======================
-
 API.interceptors.response.use(
   (res) => res,
   (err) => {
     error("❌ API ERROR:", err.response?.data || err.message);
-
     if (err.response?.status === 401) {
       warn("🔒 Unauthorized → logout");
       removeToken();
-
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }
     }
-
     return Promise.reject(err);
   }
 );
@@ -52,7 +45,6 @@ API.interceptors.response.use(
 // =======================
 // AUTH
 // =======================
-
 export const registerUser = async (data) => {
   const res = await API.post("/api/auth/register", data);
   return res.data.data;
@@ -74,9 +66,8 @@ export const logoutUser = async () => {
 };
 
 // =======================
-// MEAL PLANS
+// MEAL PLANS (Full Dashboard CRUD)
 // =======================
-
 export const generatePlan = async (data) => {
   try {
     const res = await API.post("/api/meal-plans", data);
@@ -126,13 +117,13 @@ export const sharePlan = async (id) => {
     throw err;
   }
 };
-// =======================
-// PAYMENTS
-// =======================
 
+// =======================
+// PAYMENTS (Hirurški usaglašene rute sa backendom)
+// =======================
 export const createCheckoutSession = async () => {
-  const res = await API.post("/api/payments/create-checkout");
-  return res.data.data;
+  const res = await API.post("/api/payments/checkout"); // 🔥 Ispravljena putanja na /checkout
+  return res.data.url || res.data.data;
 };
 
 export const getSubscriptionStatus = async () => {
@@ -141,12 +132,16 @@ export const getSubscriptionStatus = async () => {
 };
 
 // =======================
-// HEALTH CHECK (🔥 OVO FALI)
+// MONITORING & HEALTH CHECK
 // =======================
-
 export const checkHealth = async () => {
-  const res = await API.get("/api/health");
-  return res.data.data;
+  try {
+    const res = await API.get("/api/health");
+    return res.data;
+  } catch (err) {
+    error("Health check failed:", err.message);
+    throw err;
+  }
 };
 
 export default API;
