@@ -6,6 +6,10 @@ const MealPlan = require("../models/MealPlan");
 const User = require("../models/User");
 const logger = require("../utils/logger");
 
+// 🔥 UVOZ PREMIUM RETENCIONIH EKOSISTEMA (TRENING I MOTIVACIJA)
+const { generatePremiumWorkout } = require("../services/workoutEngine");
+const { getRandomPremiumMotivation } = require("../services/motivationEngine");
+
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 const normalizePreferences = (preferences = {}) => ({
@@ -56,7 +60,10 @@ const checkAndResetAIUsage = async (userId) => {
 };
 
 const incrementAIUsage = async (userId, currentCount) => {
-  await User.findByIdAndUpdate(userId, { aiUsageCount: currentCount + 1, aiUsageDate: new Date() });
+  await User.findByIdAndUpdate(userId, {
+    aiUsageCount: currentCount + 1,
+    aiUsageDate: new Date()
+  });
 };
 
 const getPlanDays = (plan) => {
@@ -111,8 +118,7 @@ const normalizeAIMealPlan = (plan) => {
     weeklyPlan: plan.days.map((day) => ({
       day: day.day,
       meals: Array.isArray(day.meals) ? day.meals.map((meal) => ({
-        type: meal.type,
-        name: meal.name,
+        type: meal.type, name: meal.name,
         foods: Array.isArray(meal.foods) ? meal.foods.map((food) => ({
           category: food.category || "all", name: food.name, grams: Number(food.grams) || 0,
           calories: Number(food.calories) || 0, protein: Number(food.protein) || 0,
@@ -131,11 +137,12 @@ const normalizeAIMealPlan = (plan) => {
   };
 };
 
-// 🟢 1. KREIRANJE PLANOVA SA FALLBACK ŠTITOM
+// 🟢 1. KREIRANJE PLANOVA SA INTEGRISANIM WORKOUT I MOTIVACIONIM ENGINE-OM
 exports.createMealPlan = async (req, res) => {
   try {
     const user = req.user;
     const planRequest = buildPlanRequest(req.body);
+    const requestedDays = req.body.trainingDays || 3; // Klijent bira 2 ili 3 dana na frontendu
 
     const historyPlans = await MealPlan.find({ user: user.id }).sort({ createdAt: -1 }).limit(10);
     const history = extractHistory(historyPlans);
@@ -165,8 +172,7 @@ exports.createMealPlan = async (req, res) => {
       try {
         plan = await generateAIPlan(planRequest, { ...history, ...aiContext });
         plan = normalizeAIMealPlan(plan);
-        isAIGenerated = true;
-        source = "ai"; generatedBy = "ai"; variationId = `ai-${Date.now()}`;
+        isAIGenerated = true; source = "ai"; generatedBy = "ai"; variationId = `ai-${Date.now()}`;
       } catch (aiError) {
         logger.warn("AI plan failed, falling back to deterministic plan", aiError.message);
         plan = generateWeeklyPlan({ ...planRequest, isPremium: false });
@@ -174,10 +180,17 @@ exports.createMealPlan = async (req, res) => {
 
       if (isAIGenerated) await incrementAIUsage(user.id, aiUsageCount);
 
+      // 💥 GENERIŠI ZVANIČNE PREMIUM RETENCIONE DODATKE
+      const workout = generatePremiumWorkout(requestedDays);
+      const motivation = getRandomPremiumMotivation();
+
       const saved = await MealPlan.create({
         user: user.id, goal: planRequest.goal, calories: planRequest.calories, macros: planRequest.macros,
         weeklyPlan: plan.weeklyPlan, isAIGenerated, preferences: planRequest.preferences, source,
         cacheKey: isAIGenerated ? cacheKey : undefined, meta: { generatedBy, variationId },
+        // Trajno urezujemo u MongoDB prsten da se iscrta na frontendu!
+        premiumWorkout: workout,
+        premiumMotivation: motivation
       });
 
       return res.status(201).json({ success: true, data: saved });
@@ -217,29 +230,16 @@ exports.getGroceryList = async (req, res) => {
   }
 };
 
-// 🌐 4. GENERISANJE JAVNOG LINKA ZA DELJENJE (Hirurški ispravljen i tačan mrežni URL)
+// 🌐 4. GENERISANJE JAVNOG LINKA ZA DELJENJE
 exports.shareMealPlan = async (req, res) => {
   try {
     const plan = await MealPlan.findOne({ _id: req.params.id, user: req.user.id });
     if (!plan) return res.status(404).json({ success: false, message: "Plan nije pronadjen" });
-    
-    // 🔥 Dodata kosa crta i znak $ za ispravno povlačenje ID parametra iz MongoDB-a!
-    const publicUrl = `https://vercel.app/$  {plan._id}`;
-    
+    const publicUrl = `https://vercel.app{plan._id}`;
     return res.status(200).json({ success: true, publicUrl });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-
-// 🗑️ 5. HIRURŠKO BRISANJE PLANA KORISNIKA
-exports.deleteMealPlan = async (req, res) => {
-  try {
-    const result = await MealPlan.findOneAndDelete({ _id: req.params.id, user: req.user.id });
-    if (!result) return res.status(404).json({ success: false, message: "Plan nije pronadjen ili nemate ovlascenje" });
-    return res.status(200).json({ success: true, message: "Plan uspesno obrisan sa platforme!" });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-};
+// 🗑️ 5. HIRURŠKO BRISANJE PLANA KORISNIKAexports.deleteMealPlan = async (req, res) => {try {const result = await MealPlan.findOneAndDelete({ _id: req.params.id, user: req.user.id });if (!result) return res.status(404).json({ success: false, message: "Plan nije pronadjen ili nemate ovlascenje" });return res.status(200).json({ success: true, message: "Plan uspesno obrisan sa platforme!" });} catch (err) {res.status(500).json({ success: false, error: err.message });}};
