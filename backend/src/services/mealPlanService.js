@@ -1,18 +1,17 @@
 const mealsDb = require("../data/meals");
 
+// 📊 USAGLAŠENA DISTRIBUCIJA KALORIJA SA TEORIJOM DIPLOMSKOG RADA (100% TAČNO)
 const MEAL_DISTRIBUTION = [
   { type: "breakfast", ratio: 0.25, label: "Breakfast" },
-  { type: "snack1", ratio: 0.1, label: "Morning Snack" },
-  { type: "lunch", ratio: 0.3, label: "Lunch" },
-  { type: "snack2", ratio: 0.1, label: "Afternoon Snack" },
-  { type: "dinner", ratio: 0.25, label: "Dinner" },
+  { type: "lunch", ratio: 0.35, label: "Lunch" },
+  { type: "snack1", ratio: 0.1, label: "Snacks" },
+  { type: "dinner", ratio: 0.3, label: "Dinner" },
 ];
 
 const mealTypeCategories = {
   breakfast: ["breakfast", "all"],
-  snack1: ["snack", "all"],
   lunch: ["lunch", "all"],
-  snack2: ["snack", "all"],
+  snack1: ["snack", "all"],
   dinner: ["dinner", "all"],
 };
 
