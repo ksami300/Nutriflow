@@ -1,0 +1,29 @@
+name: 🥦 NutriFlow CI/CD Matrix Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📂 Preuzimanje koda sa repozitorijuma
+        uses: actions/checkout@v4
+
+      - name: 🟢 Konfiguracija Node.js 22 razvojnog okruženja
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 🛠️ Provera i instalacija Express Backend paketa
+        run: |
+          cd backend
+          npm ci
+
+      - name: 🔵 Provera i instalacija Next.js Frontend paketa
+        run: |
+          cd frontend
+          npm ci
