@@ -1,0 +1,75 @@
+======================================================================
+📊 PRILOG 1: RELACIONI MODEL I ARHITEKTURA BAZA PODATAKA (ERD MANIFEST)
+======================================================================
+
+1. B2C SFERA: NUTRIFLOW MONGODB ŠEMA (Dokumentno-orijentisani model)
+-------------------------------------------------------------------
+
+   +------------------+             +--------------------+
+
+   |    USER MODEL    |             |  MEAL PLAN MODEL   |
+   +------------------+             +--------------------+
+
+   | _id (ObjectId)   | 1         * | _id (ObjectId)     |
+   | email (String)   |------------>| user (Ref->User)   |
+   | password (String)|             | goal (String)      |
+   | isPremium (Bool) |             | calories (Number)  |
+   | aiUsageCount (Num|             | weeklyPlan (Array) |
+   | aiUsageDate (Date|             | premiumWorkout(Obj)|
+   +------------------+             | premiumMotivation  |
+                                    +--------------------+
+
+   * Opis relacije: Jedan korisnik (User) unutar B2C segmenta može imati 
+     nula ili više generisanih planova ishrane (MealPlan) i trenažnih šablona.
+
+
+2. B2B SFERA: FENIKS ENTERPRISE PRISMA RELACIONI MODEL (PostgreSQL prsten)
+--------------------------------------------------------------------------
+
+   +-------------------+          +-------------------+          +-------------------+
+
+   |   ORGANIZATION    |          |     WORKSPACE     |          |      PROJECT      |
+   +-------------------+          +-------------------+          +-------------------+
+
+   | id (Int, PK)      | 1      * | id (Int, PK)      | 1      * | id (Int, PK)      |
+   | name (String)     |--------->| orgId (Int, FK)   |--------->| workId (Int, FK)  |
+   | taxId (String)    |          | name (String)     |          | name (String)     |
+   | createdAt (Date)  |          | plan (String)     |          | createdAt (Date)  |
+   +-------------------+          +-------------------+          +-------------------+
+                                                                           | 1
+                                                                           |
+                                                                           | *
+                                                                 +-------------------+
+
+                                                                 |       TASK        |
+                                                                 +-------------------+
+
+                                                                 | id (Int, PK)      |
+                                                                 | projId (Int, FK)  |
+                                                                 | title (String)    |
+                                                                 | status (String)   |
+                                                                 | priority (String) |
+                                                                 +-------------------+
+
+   * Opis relacija unutar Master rada:
+     - Organizacija (Organization) sadrži više nezavisnih Radnih Prostora (Workspace).
+     - Radni Prostor (Workspace) orkestriše više poslovnih Projekata (Project).
+     - Projekat (Project) granularno delegira više operativnih Zadataka (Task).
+
+
+3. BEZBEDNOSNI PODSISTEM: CLOUD AUDIT LOG INFRASTRUKTURA (Frankfurt)
+--------------------------------------------------------------------
+
+   +------------------------------------------------------------+
+
+   |                     AUDIT_LOG SCHEMAS                      |
+   +------------------------------------------------------------+
+
+   | id (Int, PK)                                               |
+   | userId (Int)         -> Identifikator operativnog korisnika |
+   | action (String)      -> Tip akcije (CREATE, LOGIN, DELETE)  |
+   | resource (String)    -> Naziv resursa (Task, Organization)  |
+   | resourceId (Int)     -> Tačan primarni ključ entiteta      |
+   | ipAddress (String)   -> Mrežna lokacija upita              |
+   | timestamp (Date)     -> ISO precizno vreme u milisekundi   |
+   +------------------------------------------------------------+
