@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # 🟢 1. BACKEND SERVIS: Express.js Node.js server na portu 5000
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nutriflow-backend-prod
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://mongodb_container:27117/nutriflow_prod
+      - JWT_SECRET=${JWT_SECRET}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - mongodb_container
+
+  # 🔵 2. FRONTEND SERVIS: Next.js aplikacija (Turbopack) na portu 3000
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nutriflow-frontend-prod
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+    depends_on:
+      - backend
+
+  # 💾 3. BAZA PODATAKA: Izolovani MongoDB kontejner sa trajnim volumenom
+  mongodb_container:
+    image: mongo:6.0
+    container_name: nutriflow-mongodb-prod
+    restart: always
+    ports:
+      - "27117:27017"
+    volumes:
+      - nutriflow_db_data:/data/db
+
+volumes:
+  nutriflow_db_data:
+    driver: local
