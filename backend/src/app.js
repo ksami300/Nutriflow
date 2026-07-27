@@ -16,6 +16,9 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const healthRoutes = require("./routes/healthRoutes");
 const publicMealPlanRoutes = require("./routes/publicMealPlanRoutes");
 
+// 🔥 UVOZ FINANSIJSKIH RUTER VODOVA ZA STRIPE CUSTOMER PORTAL
+const billingRoutes = require("./routes/billingRoutes");
+
 const { stripeWebhook } = require("./controllers/paymentController");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const { apiLimiter } = require("./middleware/rateLimiter");
@@ -76,6 +79,9 @@ app.use("/api/meal-plans", mealPlanRoutes);
 app.use("/api/public", publicMealPlanRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/health", healthRoutes);
+
+// 🔥 MAPIRANJE STRIPE PRETPRAVNIČKOG KORISNIČKOG PORTALA
+app.use("/api/billing", billingRoutes);
 
 app.use(notFound);
 
