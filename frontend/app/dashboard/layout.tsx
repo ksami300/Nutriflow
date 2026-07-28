@@ -10,11 +10,12 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
 
-  // 📋 Definišemo niz navigacionih veza za klijentski SaaS prsten
+  // 📋 Definišemo niz navigacionih veza ukljućujući i novi monitoring sistem
   const navItems = [
     { name: "📋 Moja Ishrana", href: "/dashboard" },
     { name: "👤 Moj Profil", href: "/dashboard/profile" },
     { name: "⚙️ Podešavanja", href: "/dashboard/settings" },
+    { name: "📈 Monitoring", href: "/dashboard/metrics" }, // 🔥 NOVA VEZA KREIRANA U MILIMETAR!
   ];
 
   return (
@@ -55,7 +56,7 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* 🚀 GLAVNI SAKSOFONSKI KONTEJNER ZA DETE (Children stranice) */}
+      {/* 🚀 GLAVNI KONTEJNER ZA STRANICE (Children) */}
       <main className="flex-1 md:pl-64">
         {/* Mobilna brza navigaciona traka na vrhu za responsive ugođaj */}
         <header className="flex md:hidden items-center justify-between border-b border-slate-200 bg-white px-6 py-4 shadow-sm">
@@ -63,7 +64,7 @@ export default function DashboardLayout({
           <div className="flex gap-4 text-xs font-semibold text-slate-600">
             <Link href="/dashboard" className="hover:text-slate-950">Ishrana</Link>
             <Link href="/dashboard/profile" className="hover:text-slate-950">Profil</Link>
-            <Link href="/dashboard/settings" className="hover:text-slate-950">Meni</Link>
+            <Link href="/dashboard/metrics" className="hover:text-slate-950">Status</Link>
           </div>
         </header>
 
