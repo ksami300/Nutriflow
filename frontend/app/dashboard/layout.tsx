@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/navigation";
+import Link from "next/link"; // Uvezen ispravan, nativni Next.js Link element!
 import { usePathname } from "next/navigation";
 
 export default function DashboardLayout({
@@ -10,18 +10,17 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
 
-  // 📋 Definišemo niz navigacionih veza ukljućujući i novi monitoring sistem
   const navItems = [
     { name: "📋 Moja Ishrana", href: "/dashboard" },
     { name: "👤 Moj Profil", href: "/dashboard/profile" },
     { name: "⚙️ Podešavanja", href: "/dashboard/settings" },
-    { name: "📈 Monitoring", href: "/dashboard/metrics" }, // 🔥 NOVA VEZA KREIRANA U MILIMETAR!
+    { name: "📈 Monitoring", href: "/dashboard/metrics" },
   ];
 
   return (
     <div className="flex min-h-screen bg-slate-50">
       
-      {/* 🦅 CENTRALNI ŠIK BOČNI SIDEBAR PANEL */}
+      {/* BOČNI SIDEBAR PANEL */}
       <aside className="fixed inset-y-0 left-0 w-64 border-r border-slate-200 bg-white p-6 shadow-sm hidden md:flex flex-col justify-between">
         <div className="space-y-8">
           <div>
@@ -56,9 +55,8 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* 🚀 GLAVNI KONTEJNER ZA STRANICE (Children) */}
+      {/* GLAVNI KONTEJNER ZA STRANICE */}
       <main className="flex-1 md:pl-64">
-        {/* Mobilna brza navigaciona traka na vrhu za responsive ugođaj */}
         <header className="flex md:hidden items-center justify-between border-b border-slate-200 bg-white px-6 py-4 shadow-sm">
           <span className="font-bold text-slate-900">🥦 NutriFlow</span>
           <div className="flex gap-4 text-xs font-semibold text-slate-600">
