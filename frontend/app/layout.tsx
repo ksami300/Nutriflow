@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Navbar from "@/components/Navbar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,15 +13,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// ✅ ISPRAVAN NEXT.JS 16 METADATA STRUKTURNI MODEL
 export const metadata: Metadata = {
   title: "NutriFlow",
   description: "AI-powered nutrition and meal planning for busy lifestyles.",
-  viewport: "width=device-width, initial-scale=1.0",
   manifest: "/manifest.json",
-  themeColor: "#10b981",
   icons: {
     icon: "/file.svg",
   },
+};
+
+// ✅ SPREČAVANJE TURBOPACK WARNINGA PREKO NAMENSKOG VIEWPORT EKSPORTA
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#10b981",
 };
 
 export default function RootLayout({
@@ -29,11 +36,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="sr" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-slate-950 text-white">
+        <Navbar />
+        <main className="flex-1 w-full">
+          {children}
+        </main>
+      </body>
     </html>
   );
 }
