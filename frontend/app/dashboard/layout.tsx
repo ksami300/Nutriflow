@@ -1,7 +1,10 @@
 "use client";
 
-import Link from "next/link"; // Uvezen ispravan, nativni Next.js Link element!
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+// 🔌 UVOZ NAŠEG KROVNOG BEZBEDNOSNOG ŠTITA ZA ZAŠTITU RUTA
+import { enforceRouteProtection } from "@/utils/auth-helpers";
 
 export default function DashboardLayout({
   children,
@@ -9,6 +12,13 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [authorized, setAuthorized] = useState<boolean>(false);
+
+  useEffect(() => {
+    // 🛡️ PRESRETANJE: Ako sesija ne postoji, klijent leti na /login
+    enforceRouteProtection();
+    setAuthorized(true);
+  }, []);
 
   const navItems = [
     { name: "📋 Moja Ishrana", href: "/dashboard" },
@@ -16,6 +26,15 @@ export default function DashboardLayout({
     { name: "⚙️ Podešavanja", href: "/dashboard/settings" },
     { name: "📈 Monitoring", href: "/dashboard/metrics" },
   ];
+
+  // Blokiramo renderovanje dok se bezbednosni filter ne izvrši
+  if (!authorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-500 text-sm font-medium">
+        Učitavanje bezbednosnih protokola...
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50">
