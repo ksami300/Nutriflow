@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { UserProfileService } from "@/services/user-profile.service";
+// 🔌 UVOZ NOVE KOMPONENTE ZA ASINHRONO STRIMOVANJE AVATARA
+import AvatarUpload from "@/components/AvatarUpload";
 
 interface UserProfile {
   name: string;
@@ -14,7 +16,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
 
-  // Formularske metrike za upis u bazu
   const [weight, setWeight] = useState<number>(80);
   const [height, setHeight] = useState<number>(180);
   const [age, setAge] = useState<number>(25);
@@ -75,26 +76,34 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* KARTICA OSNOVNIH PODATAKA */}
-        <div className="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 h-fit">
-          <div className="flex items-center space-x-4 border-b border-slate-800 pb-4">
-            <div className="h-16 w-16 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center font-black text-slate-950 text-xl">
-              {profile?.name.charAt(0).toUpperCase() || "N"}
-            </div>
-            <div>
-              <h2 className="text-lg font-bold">{profile?.name || "Korisnik"}</h2>
-              <p className="text-xs text-slate-400">Član od: {profile?.joinedAt || "Danas"}</p>
-            </div>
-          </div>
+        
+        {/* LEVA RADNA STRANA (AVATAR STRIM + OSNOVNE INFORMACIJE) */}
+        <div className="lg:col-span-1 space-y-6">
+          
+          {/* BIN_AR_NA UPLOAD KOMPONENTA ZA AWS S3 KOHEZIJU */}
+          <AvatarUpload />
 
-          <div className="space-y-3 text-sm">
-            <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl">
-              <span className="text-xs text-slate-400 block mb-1">E-mail adresa</span>
-              <span className="font-medium text-slate-200 block truncate">{profile?.email || "Nije uneta"}</span>
+          {/* KARTICA OSNOVNIH PODATAKA SESIJE */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center space-x-4 border-b border-slate-800 pb-4">
+              <div className="h-12 w-12 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center font-black text-slate-950 text-base">
+                {profile?.name.charAt(0).toUpperCase() || "N"}
+              </div>
+              <div>
+                <h2 className="text-md font-bold truncate max-w-[150px]">{profile?.name || "Korisnik"}</h2>
+                <p className="text-[11px] text-slate-400">Pristup: {profile?.joinedAt || "Danas"}</p>
+              </div>
             </div>
-            <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl">
-              <span className="text-xs text-slate-400 block mb-1">Bezbednosni Status</span>
-              <span className="font-medium text-emerald-400 flex items-center">✓ Validna Sesija</span>
+
+            <div className="space-y-3 text-sm">
+              <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl">
+                <span className="text-xs text-slate-400 block mb-1">E-mail adresa</span>
+                <span className="font-medium text-slate-200 block truncate">{profile?.email || "Nije uneta"}</span>
+              </div>
+              <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl">
+                <span className="text-xs text-slate-400 block mb-1">Bezbednosni Status</span>
+                <span className="font-medium text-emerald-400 flex items-center text-xs">✓ Validna Sesija</span>
+              </div>
             </div>
           </div>
         </div>
