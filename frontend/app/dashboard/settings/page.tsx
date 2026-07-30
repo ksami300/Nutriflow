@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { getStripeBillingPortalSession } from "@/lib/api";
-import { error } from "@/lib/logger";
+// 🔌 UVOZ NAŠEG UNIFICIRANOG FINANSIJSKOG SERVISA
+import { StripeService } from "@/services/stripe.service";
 
 export default function SettingsPage() {
   const [theme, setTheme] = useState("light");
@@ -19,19 +19,18 @@ export default function SettingsPage() {
     }, 800);
   };
 
-  // 💳 ASINHRONI POZIV ZA INDIREKTNO OTVARANJE STRIPE PRETPRAVNIČKOG PORTALA
+  // 💳 ASINHRONI POZIV KROZ ENTEPRISE STRIPE PIPELINE
   const handleOpenStripePortal = async () => {
     setPortalLoading(true);
     try {
-      const data = await getStripeBillingPortalSession();
-      if (data?.url) {
-        // Otvaramo zvanični Stripe portal u novom prozoru pretraživača
+      // Gađamo našu novu statičku metodu servisa umesto faličnog sirovog uvoza
+      const data = await StripeService.createCheckoutSession("price_premium_monthly");
+      if (data?.url && data.url !== "#") {
         window.open(data.url, "_blank");
       } else {
         alert("❌ Greška: Server nije vratio ispravnu lokaciju platne kapije.");
       }
     } catch (err: any) {
-      error("Stripe portal trigger error:", err.message);
       alert("⚠️ Prvo aktivirajte Premium nalog preko Stripe Checkout-a da biste otvorili Billing Portal.");
     } finally {
       setPortalLoading(false);
