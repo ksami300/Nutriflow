@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-// 🔌 UVOZ KREIRANE VIZUELNE KOMPONENTE TOPOLOGIJE MREŽE
 import CosmicEngine from "@/components/cosmic/CosmicEngine";
+import { ObservabilityService, QueueJobStatus } from "@/services/observability.service";
 
 interface TelemetryData {
   cpuUsage: number;
@@ -19,9 +19,17 @@ export default function MetricsPage() {
     activeConnections: 1
   });
 
+  const [queueStatus, setQueueStatus] = useState<QueueJobStatus>({
+    waiting: 0,
+    active: 0,
+    failed: 0,
+    completed: 0
+  });
+
   useEffect(() => {
-    async function fetchTelemetry() {
+    async function fetchTelemetryAndQueues() {
       try {
+        // 1. Sinkroni zahvat serverskih hardverskih resursa
         const res = await fetch("http://localhost:5000/api/health");
         if (res.ok) {
           const data = await res.json();
@@ -32,13 +40,17 @@ export default function MetricsPage() {
             activeConnections: Math.floor(Math.random() * 3) + 1
           });
         }
+
+        // 2. Asinhroni zahvat raspoređenih Redis poslova (BullMQ)
+        const queueData = await ObservabilityService.getQueueMetrics();
+        setQueueStatus(queueData);
       } catch (err) {
-        console.error("Greška pri povlačenju telemetrijskih podataka:", err);
+        console.error("Greška pri sinhronizaciji telemetrijskih vodova:", err);
       }
     }
 
-    fetchTelemetry();
-    const interval = setInterval(fetchTelemetry, 5000);
+    fetchTelemetryAndQueues();
+    const interval = setInterval(fetchTelemetryAndQueues, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -46,11 +58,30 @@ export default function MetricsPage() {
     <div className="p-6 max-w-4xl mx-auto space-y-6 text-white bg-slate-950 min-h-screen">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Sistemski Monitoring</h1>
-        <p className="text-slate-400 text-sm">Praćenje zdravlja i latencije API Gateway čvorova u realnom vremenu.</p>
+        <p className="text-slate-400 text-sm">Praćenje zdravlja i asinhronih Redis redova u realnom vremenu.</p>
       </div>
 
-      {/* 🌌 JDRZVO RENDER_OVANJE INTERAKTIVNOG COSMIC NODE ENGINE-A */}
       <CosmicEngine />
+
+      {/* PRIKAZ REFAKTORISANE ASINHRONE REDIS TELEMETRIJE */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl">
+          <span className="text-xs text-slate-400 block mb-1">Queued (Čekanje)</span>
+          <span className="text-xl font-bold text-yellow-400">{queueStatus.waiting}</span>
+        </div>
+        <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl">
+          <span className="text-xs text-slate-400 block mb-1">BullMQ Active</span>
+          <span className="text-xl font-bold text-purple-400">{queueStatus.active}</span>
+        </div>
+        <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl">
+          <span className="text-xs text-slate-400 block mb-1">Uspesi (Completed)</span>
+          <span className="text-xl font-bold text-emerald-400">{queueStatus.completed}</span>
+        </div>
+        <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl">
+          <span className="text-xs text-slate-400 block mb-1">Kritični Failures</span>
+          <span className="text-xl font-bold text-red-500">{queueStatus.failed}</span>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl">
