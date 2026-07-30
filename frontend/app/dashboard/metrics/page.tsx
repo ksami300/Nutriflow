@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+// 🔌 UVOZ KREIRANE VIZUELNE KOMPONENTE TOPOLOGIJE MREŽE
+import CosmicEngine from "@/components/cosmic/CosmicEngine";
 
 interface TelemetryData {
   cpuUsage: number;
@@ -46,6 +48,9 @@ export default function MetricsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Sistemski Monitoring</h1>
         <p className="text-slate-400 text-sm">Praćenje zdravlja i latencije API Gateway čvorova u realnom vremenu.</p>
       </div>
+
+      {/* 🌌 JDRZVO RENDER_OVANJE INTERAKTIVNOG COSMIC NODE ENGINE-A */}
+      <CosmicEngine />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl">
